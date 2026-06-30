@@ -6,18 +6,28 @@ export function CreateNewProject(arg1:string):Promise<io.ProjectResponse>;
 
 export function DeleteProject(arg1:string):Promise<io.ProjectResult>;
 
+export function GetApiSchema(arg1:string):Promise<Array<any>>;
+
 export function GetDatabaseList(arg1:string,arg2:number,arg3:string,arg4:string):Promise<Array<string>>;
 
 export function GetProjectEnv(arg1:string):Promise<Record<string, any>>;
 
+export function GetProjectSchema(arg1:string):Promise<Record<string, io.IntermediateSchema>>;
+
 export function GetTableList(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string):Promise<Array<string>>;
 
-export function GetTableSchema(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string,arg6:string):Promise<io.Entity>;
+export function GetTableSchema(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string,arg6:string):Promise<Array<io.Field>>;
 
 export function Greet(arg1:string):Promise<string>;
+
+export function ImportDatabaseSchema(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string):Promise<io.IntermediateSchema>;
 
 export function ListProjects():Promise<Array<string>>;
 
 export function RenameProject(arg1:string,arg2:string):Promise<io.ProjectResult>;
 
+export function SaveApiSchema(arg1:string,arg2:string):Promise<void>;
+
 export function SaveProjectEnv(arg1:string,arg2:Record<string, any>):Promise<io.ProjectResult>;
+
+export function SaveProjectSchema(arg1:string,arg2:Record<string, io.IntermediateSchema>):Promise<io.ProjectResult>;

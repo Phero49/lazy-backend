@@ -149,14 +149,7 @@ const stats = [
     }
 }
 
-.card-hover {
-    transition: border-color 0.2s, background 0.2s;
 
-    &:hover {
-        border-color: rgba(var(--q-primary), 0.3);
-        background: #111;
-    }
-}
 
 .icon-watermark {
     font-size: 120px;

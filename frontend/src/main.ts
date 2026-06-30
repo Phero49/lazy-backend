@@ -1,6 +1,5 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import "./style.css";
 import { Quasar, Notify, Dialog } from "quasar";
 import quasarIconSet from "quasar/icon-set/fontawesome-v6";
 import router from "./routes";
@@ -14,6 +13,7 @@ import "@quasar/extras/bootstrap-icons/bootstrap-icons.css";
 // Import Quasar css
 import "quasar/src/css/index.sass";
 
+import  './css/style.css'
 const myApp = createApp(App);
 const pinia = createPinia();
 

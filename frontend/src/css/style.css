@@ -1,0 +1,10 @@
+/* Custom helper classes for Wails */
+.wails-drag {
+  --wails-draggable: drag;
+  -webkit-app-region: drag;
+}
+
+.wails-nodrag {
+  --wails-draggable: no-drag;
+  -webkit-app-region: no-drag;
+}

@@ -10,12 +10,20 @@ export function DeleteProject(arg1) {
   return window['go']['main']['App']['DeleteProject'](arg1);
 }
 
+export function GetApiSchema(arg1) {
+  return window['go']['main']['App']['GetApiSchema'](arg1);
+}
+
 export function GetDatabaseList(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['GetDatabaseList'](arg1, arg2, arg3, arg4);
 }
 
 export function GetProjectEnv(arg1) {
   return window['go']['main']['App']['GetProjectEnv'](arg1);
+}
+
+export function GetProjectSchema(arg1) {
+  return window['go']['main']['App']['GetProjectSchema'](arg1);
 }
 
 export function GetTableList(arg1, arg2, arg3, arg4, arg5) {
@@ -30,6 +38,10 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
+export function ImportDatabaseSchema(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ImportDatabaseSchema'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function ListProjects() {
   return window['go']['main']['App']['ListProjects']();
 }
@@ -38,6 +50,14 @@ export function RenameProject(arg1, arg2) {
   return window['go']['main']['App']['RenameProject'](arg1, arg2);
 }
 
+export function SaveApiSchema(arg1, arg2) {
+  return window['go']['main']['App']['SaveApiSchema'](arg1, arg2);
+}
+
 export function SaveProjectEnv(arg1, arg2) {
   return window['go']['main']['App']['SaveProjectEnv'](arg1, arg2);
+}
+
+export function SaveProjectSchema(arg1, arg2) {
+  return window['go']['main']['App']['SaveProjectSchema'](arg1, arg2);
 }

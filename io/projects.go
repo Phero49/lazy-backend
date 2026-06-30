@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -18,6 +19,8 @@ type ProjectResult struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
+
+var AppDataDir = "./app-data"
 
 // GetProjectDir returns the base directory for lazy-backend projects
 func GetProjectDir() (string, error) {
@@ -194,4 +197,97 @@ func SaveProjectEnv(projectName string, envData map[string]interface{}) ProjectR
 	}
 
 	return ProjectResult{Success: true, Message: "Configuration saved successfully"}
+}
+
+// GetProjectSchema reads the schema.json for a given project
+func GetProjectSchema(projectName string) (map[string]IntermediateSchema, error) {
+	var schema map[string]IntermediateSchema
+	projectRootDir, err := GetProjectDir()
+	if err != nil {
+		return schema, err
+	}
+
+	schemaPath := filepath.Join(projectRootDir, projectName, "schema.json")
+	if _, err := os.Stat(schemaPath); os.IsNotExist(err) {
+		return schema, nil
+	}
+
+	data, err := os.ReadFile(schemaPath)
+	if err != nil {
+		return schema, err
+	}
+
+	err = json.Unmarshal(data, &schema)
+	if err != nil {
+		return schema, err
+	}
+
+	return schema, nil
+}
+
+// SaveProjectSchema saves the schema.json for a given project
+func SaveProjectSchema(projectName string, schema map[string]IntermediateSchema) ProjectResult {
+	projectRootDir, err := GetProjectDir()
+	if err != nil {
+		return ProjectResult{Success: false, Message: err.Error()}
+	}
+
+	schemaPath := filepath.Join(projectRootDir, projectName, "schema.json")
+
+	schemaBytes, err := json.MarshalIndent(schema, "", "  ")
+	if err != nil {
+		return ProjectResult{Success: false, Message: fmt.Sprintf("Failed to marshal schema: %v", err)}
+	}
+
+	err = os.WriteFile(schemaPath, schemaBytes, 0644)
+	if err != nil {
+		return ProjectResult{Success: false, Message: fmt.Sprintf("Failed to write schema file: %v", err)}
+	}
+
+	return ProjectResult{Success: true, Message: "Schema saved successfully"}
+}
+
+func SaveRecent(project []map[string]string) {
+	projectRootDir := "./app-data"
+	if _, err := os.Stat(projectRootDir); os.IsNotExist(err) {
+		os.MkdirAll(projectRootDir, 0755)
+	}
+	projectJson, _ := json.Marshal(project)
+	os.WriteFile(path.Join(projectRootDir, "recent.json"), projectJson, 0644)
+}
+
+func GetRecent() []map[string]string {
+	data, err := os.ReadFile(path.Join(AppDataDir, "recent.json"))
+	if err != nil {
+		return nil
+	}
+	var recent []map[string]string
+	err = json.Unmarshal(data, &recent)
+	if err != nil {
+		return nil
+	}
+	return recent
+}
+
+func SaveApiSchema(data string, project string) error {
+	dir, _ := GetProjectDir()
+	err := os.WriteFile(path.Join(dir, project, "api.json"), []byte(data), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetApiSchema(project string) ([]any, error) {
+	dir, _ := GetProjectDir()
+
+	var marshaledData = make([]any, 0)
+	data, err := os.ReadFile(path.Join(dir, project, "api.json"))
+	if err != nil {
+		return marshaledData, err
+	}
+
+	err = json.Unmarshal(data, &marshaledData)
+	return marshaledData, err
+
 }

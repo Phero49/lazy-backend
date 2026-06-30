@@ -59,18 +59,46 @@ func (a *App) SaveProjectEnv(name string, envData map[string]interface{}) io.Pro
 
 // GetDatabaseList returns a list of databases for a given host
 func (a *App) GetDatabaseList(host string, port int, user, password string) ([]string, error) {
-	parser := io.MariaDbParser{}
-	return parser.GetDatabaseList(host, port, user, password)
+	//parser := io.MariaDbParser{}
+	return make([]string, 0), nil
 }
 
 // GetTableList returns a list of tables for a given database
 func (a *App) GetTableList(host string, port int, user, password, database string) ([]string, error) {
-	parser := io.MariaDbParser{}
-	return parser.GetTableList(host, port, user, password, database)
+	//parser := io.MariaDbParser{}
+	return make([]string, 0), nil
+
 }
 
 // GetTableSchema returns the intermediate schema for a specific table
-func (a *App) GetTableSchema(host string, port int, user, password, database, tableName string) (*io.Entity, error) {
-	parser := io.MariaDbParser{}
-	return parser.GetTableSchema(host, port, user, password, database, tableName)
+func (a *App) GetTableSchema(host string, port int, user, password, database, tableName string) ([]io.Field, error) {
+	//parser := io.MariaDbParser{}
+	return make([]io.Field, 0), nil
+}
+
+// ImportDatabaseSchema introspects the entire database and returns the intermediate schema
+func (a *App) ImportDatabaseSchema(host string, port int, user, password, database string) (io.IntermediateSchema, error) {
+	//parser := io.MariaDbParser{}
+	var p io.IntermediateSchema
+	return p, nil
+}
+
+// GetProjectSchema gets the schema for a project
+func (a *App) GetProjectSchema(name string) (map[string]io.IntermediateSchema, error) {
+	return io.GetProjectSchema(name)
+}
+
+// SaveProjectSchema saves the schema for a project
+func (a *App) SaveProjectSchema(name string, schema map[string]io.IntermediateSchema) io.ProjectResult {
+	return io.SaveProjectSchema(name, schema)
+}
+
+// SaveProjectSchema saves the schema for a project
+func (a *App) SaveApiSchema(data string, project string) error {
+	return io.SaveApiSchema(data, project)
+}
+
+// SaveProjectSchema saves the schema for a project
+func (a *App) GetApiSchema(project string) ([]any, error) {
+	return io.GetApiSchema(project)
 }
