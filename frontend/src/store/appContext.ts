@@ -2,8 +2,10 @@ import { FieldType } from "./../../types.d";
 import { defineStore } from "pinia";
 import { io } from "../../wailsjs/go/models";
 import {
+  GetAllInstalledDependencies,
   GetApiSchema,
   GetProjectSchema,
+  GetProjectUsedDependencies,
   SaveApiSchema,
   SaveProjectSchema,
 } from "../../wailsjs/go/main/App";
@@ -11,6 +13,7 @@ import { LocationQuery, useRouter } from "vue-router";
 import { nextTick, toRaw } from "vue";
 import router from "../routes";
 import { Condition } from "..";
+import { DatabaseAttribute } from "~/index.js";
 export interface WorkspaceTab {
   id: string;
   label: string;
@@ -62,12 +65,22 @@ export interface DatabaseQuery {
   columns: {
     column: string;
     alias?: string;
+    attributes?: {
+      name: string;
+      isFunction: boolean;
+      values: {      source: "column" | "static";
+
+        table?: string;
+        value: string;
+      }[];
+    }[];
   }[];
   where: Condition[];
 }
 
 export interface DatabaseOperations {
   name: string;
+  conditions?: string;
   databaseAction: "SELECT" | "UPDATE" | "DELETE" | "INSERT";
   query: DatabaseQuery;
 }
@@ -89,13 +102,18 @@ export interface EndPointList {
 }
 
 export interface Join {
-  baseTable: string;
   joinType: "INNER" | "LEFT" | "RIGHT" | "FULL";
   conditions: {
     operator: string;
-    baseColumn: string;
-    targetTable: string;
-    targetColumn: string;
+    logical?: string;
+    leftTable: string;
+    leftColumn: string;
+    right: {
+      source: "column" | "payload" | "static" | "computed";
+      rightTable: string;
+      rightColumn: string;
+      value?: string | number;
+    };
   }[];
 }
 
@@ -111,6 +129,16 @@ export const useAppContextStore = defineStore("appContext", {
     activeConnectionName: null as string | null,
     databaseSchemas: {} as Record<string, io.IntermediateSchema>,
     apiSchema: [] as EndPointList[],
+    installedDependencies: [] as io.Dependence[],
+    projectDependencies: [] as io.Dependence[],
+    activePlugins: {
+      api: null as { port: string; plugin: io.PluginManifestSchema } | null,
+      database: null as {
+        port: string;
+        plugin: io.PluginManifestSchema;
+      } | null,
+    },
+    databaseAttributes: [] as DatabaseAttribute[],
   }),
   getters: {
     activeTab: (state) =>
@@ -121,6 +149,18 @@ export const useAppContextStore = defineStore("appContext", {
         : null,
   },
   actions: {
+    async getInstalledDependencies() {
+      this.installedDependencies = await GetAllInstalledDependencies();
+    },
+    async getProjectDependencies() {
+      if (this.currentProject == null) {
+        throw Error("no project is found select project first ");
+      }
+      this.installedDependencies = await GetProjectUsedDependencies(
+        this.currentProject,
+      );
+    },
+
     async createNewTable(name: string) {
       const emptyField: io.Field = {
         isPrimaryKey: true,

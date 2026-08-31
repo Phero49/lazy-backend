@@ -10,7 +10,8 @@
         <EndpointPayload
           :payload="endPointData.data?.payload || []"
           :method="endPointData.method"
-        />
+        >
+        </EndpointPayload>
       </q-expansion-item>
     </div>
     <div></div>
@@ -20,15 +21,47 @@
       v-for="(value, i) in endPointData.data?.operations || []"
     >
       <DatabaseOperationsUi
+        :index="i"
         :end-point-data="endPointData"
         :db-operation="value"
-        @update-payload="updateLimitPayload"
-      />
+        @update-payload="endPoint.updateLimitPayload"
+      >
+        <template #condition>
+          <div class="q-px-sm" style="cursor: pointer" @click.stop>
+            <q-select
+              @click.stop
+              dense
+              v-model="activeCondition"
+              :options="['fff']"
+              label="Select Condition"
+              filled
+            >
+              <template #before-options>
+                <div>
+           
+                  <div class="text-center q-py-md">
+                    <q-btn
+                      color="grey"
+                      no-caps
+                      class="text-capitalize"
+                      unelevated
+                      icon="add"
+                      label="add new condition"
+                      @click="() => null"
+                    />
+                  </div>
+                </div>
+              </template>
+            </q-select>
+          </div>
+        </template>
+      </DatabaseOperationsUi>
     </div>
-    <div>
+    <div class="text-center">
       <q-btn
-        color="primary"
-        icon="bi-database"
+        color="grey"
+        dense
+        :icon="symRoundedStepInto"
         @click="
           endPointData.data?.operations.push({
             databaseAction: 'SELECT',
@@ -43,6 +76,20 @@
         "
       >
       </q-btn>
+      <q-btn color="grey" dense :icon="symRoundedArrowSplit" @click="">
+        <q-menu anchor="center middle">
+          <q-list style="min-width: 100px">
+            <div class="q-pa-md">add branching condition</div>
+            <q-item clickable v-close-popup>
+              <q-item-section>New tab</q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item clickable v-close-popup>
+              <q-item-section>New incognito tab</q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+      </q-btn>
     </div>
   </div>
   <div v-else>
@@ -53,7 +100,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, toRaw, watch } from "vue";
+import { computed, provide, ref, toRaw, watch } from "vue";
 import {
   httpMethod,
   type HTTPMethods,
@@ -63,10 +110,15 @@ import {
 } from "../store/appContext";
 import TableCellEditor from "../components/TableCellEditor.vue";
 import { biChevronDown, biDash, biPlus } from "@quasar/extras/bootstrap-icons";
+import {
+  symRoundedStepInto,
+  symRoundedArrowSplit,
+} from "@quasar/extras/material-symbols-rounded";
 import DatabaseOperationsUi from "../components/DatabaseOperationsUi.vue";
 import { useRoute } from "vue-router";
 import { date } from "quasar";
 import EndpointPayload from "../components/EndpointPayload.vue";
+import { useEndPointContext } from "../composable/EndpointBulder";
 
 const route = useRoute();
 const level = computed(() =>
@@ -93,24 +145,11 @@ const endPointData = computed(() => {
     return route;
   }
 });
+const activeCondition = ref<string | null>(null);
 
-function updateLimitPayload(v: boolean) {
-  if (v) {
-    endPointData.value?.data?.payload.push({
-      dataType: "int",
-      fieldName: "start_at",
-      dataSource: "query",
-      required: true,
-    });
-  } else {
-    const index = endPointData.value?.data?.payload.findIndex(
-      (v) => v.fieldName == "start_at",
-    );
-    if (index != undefined && index != -1) {
-      endPointData.value?.data?.payload.splice(index, 1);
-    }
-  }
-}
+//TODO: remove the prop architecture
+const endPoint = useEndPointContext(endPointData.value);
+provide("endPointContext", endPoint);
 
 const testOperation = () => {
   null;

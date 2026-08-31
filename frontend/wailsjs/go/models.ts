@@ -14,6 +14,167 @@ export namespace io {
 	        this.name = source["name"];
 	    }
 	}
+	export class EndPointData {
+	    method: string;
+	    route: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EndPointData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.method = source["method"];
+	        this.route = source["route"];
+	    }
+	}
+	export class DatabaseEndPoints {
+	    attributes: EndPointData;
+	    "import-database": EndPointData;
+	    compile: EndPointData;
+	
+	    static createFrom(source: any = {}) {
+	        return new DatabaseEndPoints(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.attributes = this.convertValues(source["attributes"], EndPointData);
+	        this["import-database"] = this.convertValues(source["import-database"], EndPointData);
+	        this.compile = this.convertValues(source["compile"], EndPointData);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Dependence {
+	    name: string;
+	    description: string;
+	    exportsCount: number;
+	    version: number;
+	    publisher: string;
+	    location: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Dependence(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.exportsCount = source["exportsCount"];
+	        this.version = source["version"];
+	        this.publisher = source["publisher"];
+	        this.location = source["location"];
+	    }
+	}
+	export class Exports {
+	    description?: string;
+	    name: string;
+	    params: Record<string, any>;
+	    returnType: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Exports(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.description = source["description"];
+	        this.name = source["name"];
+	        this.params = source["params"];
+	        this.returnType = source["returnType"];
+	    }
+	}
+	export class Module {
+	    path: string;
+	    exports: Exports[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Module(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.exports = this.convertValues(source["exports"], Exports);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DependencySchema {
+	    version: number;
+	    "lang-extension": string;
+	    description: string;
+	    publisher: string;
+	    install: string[];
+	    modules: Module[];
+	
+	    static createFrom(source: any = {}) {
+	        return new DependencySchema(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this["lang-extension"] = source["lang-extension"];
+	        this.description = source["description"];
+	        this.publisher = source["publisher"];
+	        this.install = source["install"];
+	        this.modules = this.convertValues(source["modules"], Module);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class Reference {
 	    constraintName: string;
 	    sourceTable: string;
@@ -149,6 +310,7 @@ export namespace io {
 	
 	
 	
+	
 	export class ReferencedColumns {
 	    constraintName: string;
 	    localColumn: string;
@@ -272,6 +434,125 @@ export namespace io {
 		}
 	}
 	
+	
+	export class Stack {
+	    database: string;
+	    framework?: string;
+	    language?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Stack(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.database = source["database"];
+	        this.framework = source["framework"];
+	        this.language = source["language"];
+	    }
+	}
+	export class PluginManifestSchema {
+	    version: string;
+	    publisher: string;
+	    description: string;
+	    type: string;
+	    start: string;
+	    stack: Stack;
+	    run: string;
+	    "end-points": DatabaseEndPoints;
+	
+	    static createFrom(source: any = {}) {
+	        return new PluginManifestSchema(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = source["version"];
+	        this.publisher = source["publisher"];
+	        this.description = source["description"];
+	        this.type = source["type"];
+	        this.start = source["start"];
+	        this.stack = this.convertValues(source["stack"], Stack);
+	        this.run = source["run"];
+	        this["end-points"] = this.convertValues(source["end-points"], DatabaseEndPoints);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PluginItem {
+	    name: string;
+	    version: string;
+	    publisher: string;
+	    description: string;
+	    path: string;
+	    is_local: boolean;
+	    run: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PluginItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.version = source["version"];
+	        this.publisher = source["publisher"];
+	        this.description = source["description"];
+	        this.path = source["path"];
+	        this.is_local = source["is_local"];
+	        this.run = source["run"];
+	    }
+	}
+	export class PluginDetail {
+	    item: PluginItem;
+	    manifest: PluginManifestSchema;
+	
+	    static createFrom(source: any = {}) {
+	        return new PluginDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.item = this.convertValues(source["item"], PluginItem);
+	        this.manifest = this.convertValues(source["manifest"], PluginManifestSchema);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
 	export class ProjectResponse {
 	    created: boolean;
 	    message: string;
@@ -300,6 +581,7 @@ export namespace io {
 	        this.message = source["message"];
 	    }
 	}
+	
 	
 	
 

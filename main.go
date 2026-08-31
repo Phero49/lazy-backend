@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"embed"
+	devserver "lazy-backend/dev-server"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -17,13 +19,20 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
+
 		Title: "lazy-backend",
 		Width: 1024,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnShutdown: func(ctx context.Context) {
+			devserver.ShutdownServer()
+		},
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx)
+			devserver.StartDevServer()
+		},
 		Bind: []interface{}{
 			app,
 		},

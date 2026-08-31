@@ -4,9 +4,17 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { quasar, transformAssetUrls } from "@quasar/vite-plugin";
+import path from 'path'
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  resolve:{
+    alias:{
+         '~': path.resolve(__dirname, './src'),
+         '#': path.resolve(__dirname, './')
+     
+  }},
   plugins: [
     vue({
       template: { transformAssetUrls },

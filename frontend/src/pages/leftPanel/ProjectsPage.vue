@@ -147,7 +147,8 @@ import {
   ListProjects,
   CreateNewProject,
   DeleteProject,
-} from "../../../wailsjs/go/main/App";
+  StartProjectDependencies,
+} from "#/wailsjs/go/main/App";
 import { useAppContextStore } from "../../store/appContext";
 import { useQuasar } from "quasar";
 
@@ -222,6 +223,7 @@ const selectProject = (project: { name: string; path: string }) => {
     position: "bottom-right",
     timeout: 1500,
   });
+  StartProjectDependencies(project.name)
 };
 
 async function deleteProject(project: { name: string; path: string }) {

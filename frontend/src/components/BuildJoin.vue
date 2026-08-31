@@ -17,10 +17,16 @@
             </q-list>
           </q-menu></span
         >
-        JOIN <span class="text-bold text-info">{{ data.baseTable }}</span> ON
+        JOIN
+        <span class="text-bold text-info">{{
+          data.conditions[0].leftTable
+        }}</span>
+        ON   
         <join-condition
-          v-for="value in data.conditions"
-          :base-table="data.baseTable"
+          :condition-index="i"
+          :table-index="tableIndex"
+          :operation-index="operationIndex"
+          v-for="(value, i) in data.conditions"
           :data="value"
           :tables-available-to-join-with="tablesAvailableToJoinWith"
         />
@@ -32,12 +38,15 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 import { useOptions } from "../store/optionsRegistry";
-import { Join } from "../store/appContext";
+import { Join, Payload, Routes } from "../store/appContext";
 import JoinCondition from "./JoinCondition.vue";
 
 const props = defineProps<{
   data?: Join;
+  operationIndex:number
+  tableIndex:number
   tablesAvailableToJoinWith: string[];
+
 }>();
 const joins = ref<Join["joinType"][]>(["INNER", "LEFT", "RIGHT", "FULL"]);
 </script>

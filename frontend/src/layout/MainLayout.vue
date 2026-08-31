@@ -162,12 +162,29 @@ import { ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import MainNav from "../components/MainNav.vue";
 import { useAppContextStore } from "../store/appContext";
+import { EventsOn } from "#/wailsjs/runtime/runtime.js";
+import { useQuasar } from "quasar";
+import { io } from "#/wailsjs/go/models.js";
 
 const router = useRouter();
 const route = useRoute();
 const store = useAppContextStore();
 const search = ref("");
+const $q = useQuasar()
+EventsOn("plugin:error",({name,reason})=>{
+$q.notify({message:`[devserver] ❌ Plugin ${name}: ${reason}`,type:'negative',color:'red-8',icon:'warning'})
+})
 
+EventsOn("pluginRegistered",({port,plugin}:{port:string,plugin:io.PluginManifestSchema})=>{
+ alert(JSON.stringify(plugin))
+  const pluginType = plugin.type == 'database' ?'database' :'api'
+  store.activePlugins[pluginType] = {
+    port,
+    plugin:plugin
+  }
+
+
+})
 const onTabClick = (tabId: string, path: string) => {
   store.setActiveTab(tabId);
   router.push({ path, force: true });

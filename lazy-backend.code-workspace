@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../lazy-backend-plugins/samples"
+		}
+	],
+	"settings": {}
+}

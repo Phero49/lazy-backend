@@ -9,7 +9,6 @@ import { createPinia } from "pinia";
 import "@quasar/extras/material-icons/material-icons.css";
 // ..required because of selected iconSet:
 import "@quasar/extras/bootstrap-icons/bootstrap-icons.css";
-
 // Import Quasar css
 import "quasar/src/css/index.sass";
 

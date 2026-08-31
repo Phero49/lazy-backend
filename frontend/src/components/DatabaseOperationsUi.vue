@@ -5,6 +5,10 @@
         <div class="">
           {{ dbOperation.name || "step name" }}
         </div>
+        <div class="col" >
+          <slot name="condition" ></slot>
+
+        </div>
         <q-space />
 
         <div>
@@ -149,16 +153,13 @@
             >
               <q-popup-proxy>
                 <q-card flat class="my-card q-pa-sm" style="min-width: 330px">
-                  <div
-                    v-if="
-                      dbOperation.query.tables[i + 1].join &&
-                  
-                    "
-                  >
-                    {{ dbOperation.query.tables[i + 1].join }}sdd
+                  <div v-if="dbOperation.query.tables[i + 1].join">
                     <build-join
                       :data="dbOperation.query.tables[i + 1].join"
                       :tableToJoin="dbOperation.query.tables[i + 1].table"
+                      :operation-index="index"
+                      :table-index="i+1"
+                     
                       :tablesAvailableToJoinWith="
                         dbOperation.query.tables
                           .map((v) => v.table)
@@ -173,12 +174,14 @@
                         @click="
                           addJoinCondition(
                             i + 1,
-                            dbOperation.query.tables[i + 1].table,
+                            dbOperation.query.tables[i].table,
+                            dbOperation.query.tables[i + 1].table
                           )
                         "
                         no-caps
                         unelevated
                       />
+
                     </div>
                   </div>
                 </q-card>
@@ -225,37 +228,29 @@
               removable
               clickable
               :icon-remove="biXCircleFill"
-              @remove="operations.columns.splice(i, 1)"
+              @remove="()=>{
+                operations.columns.splice(i, 1)              }"
             >
-              <q-menu>
-                <q-list style="min-width: 100px">
-                  <div
-                    class="text-center q-pt-sm text-capitalize text-subtitle1 text-grey"
-                  >
-                    add function
-                  </div>
-                  <q-separator spaced />
-                  <q-item clickable v-close-popup>
-                    <q-item-section>New tab</q-item-section>
-                  </q-item>
-                  <q-separator />
-                  <q-item clickable v-close-popup>
-                    <q-item-section>New incognito tab</q-item-section>
-                  </q-item>
-                </q-list>
+              <q-menu context-menu >
+           <column-attributes-selector 
+           :col-index="i"
+           :column="value"
+           :data="{
+            dbOperation:dbOperation,
+            index:index,
+            routeData:endPointData
+           }" />
               </q-menu>
             </q-chip>
           </div>
 
           <q-btn color="grey-8" size="sm" dense icon="bi-plus" class="q-px-sm">
-            <q-menu flat class="no-shadow">
-              <div class="text-center q-py-sm text-bold">Select Columns</div>
+            <q-menu  anchor="bottom end" self="top start" flat class="no-shadow">
               <select-columns
                 @updated="columnsUpdated"
                 :tables="dbOperation.query.tables.map((v) => v.table)"
               />
             </q-menu>
-            <q-tooltip>Select Columns</q-tooltip>
           </q-btn>
         </div>
       </div>
@@ -326,7 +321,7 @@ import {
   mdiSetCenter,
   mdiSetAll,
 } from "@quasar/extras/mdi-v7";
-import { ref } from "vue";
+import { provide, ref } from "vue";
 import { useOptions } from "../store/optionsRegistry";
 import CustomSelector from "./customSelector.vue";
 import SelectComuns from "./selectComuns.vue";
@@ -340,30 +335,42 @@ import {
 } from "../store/appContext";
 import { Condition } from "..";
 import BuildJoin from "./BuildJoin.vue";
+import { testOperationBlock } from "~/client/api";
+import ColumnAttributesSelector from "./columnAttributesSelector.vue";
 
 const appContext = useAppContextStore();
-const operationName = ref("");
 type OperationType = "SELECT" | "UPDATE" | "DELETE" | "INSERT";
-const operationType = ref<OperationType>("SELECT");
 const pagination = ref(false);
 const startAt = ref("0");
 const endAt = ref("10");
 const batch = ref(10);
 const props = defineProps<{
+  index:number
   endPointData: Routes;
   dbOperation: DatabaseOperations;
 }>();
 const filterTables = ref("");
-const testOperation = () => {};
+const testOperation = () => {
+  testOperationBlock()
+};
 const deleteOperation = () => {};
 const options = useOptions();
 const emits = defineEmits<{ updatePayload: [boolean] }>();
+const useOperationInfo = ()=>({
+ index:props.index,
+ routeData:props.endPointData,
+ dbOperation:props.dbOperation
+})
+provide("useOperationInfo",useOperationInfo)
+
+
 
 const operations = ref<DatabaseQuery>({
   columns: [],
   tables: [],
   where: [],
 });
+
 const addTable = (table: string) => {
   if (props.dbOperation.query.tables == undefined) {
     props.dbOperation.query.tables = [];
@@ -379,13 +386,11 @@ const addTable = (table: string) => {
 
     if (currentEntry.join == undefined) {
       currentEntry.join = {
-        baseTable: previousEntry.table,
         conditions: [],
         joinType: "INNER",
       };
     }
-
-    addJoinCondition(length - 1, table);
+    addJoinCondition(length - 1, previousEntry.table, table, true);
   }
   appContext.saveApi();
 };
@@ -393,13 +398,21 @@ const addTable = (table: string) => {
 const addJoinCondition = (
   tableIndex: number,
 
-  joinTable: string,
+  leftTable: string,
+  rightTable: string,
+  isNew = false,
 ) => {
+  console.log("addJoinCondition",  leftTable, rightTable);
   props.dbOperation.query.tables[tableIndex]?.join?.conditions.push({
-    baseColumn: "---",
-    targetColumn: "---",
+    leftColumn: "---",
+    leftTable: leftTable,
+    right: {
+      source: "column",
+      rightTable: rightTable,
+      rightColumn: "---",
+    },
     operator: "=",
-    targetTable: joinTable,
+    ...(isNew ? {} : { logical: "AND" }),
   });
   appContext.saveApi();
 };

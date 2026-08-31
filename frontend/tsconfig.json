@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "paths": {
+      "~/*": ["./src/*"],
+      "#/*": ["./*"]
+    },
+"rootDir": ".",
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -16,13 +21,16 @@
     ],
     "skipLibCheck": true
   },
+  "exclude":[
+"samples/*"
+  ],
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
     "wailsjs/**/*.ts"
-  ],
+, "src/pages/view. vue"  ],
   "references": [
     {
       "path": "./tsconfig.node.json"

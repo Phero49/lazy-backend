@@ -5,7 +5,7 @@
     class="q-pa-sm"
     style="min-height: 380px; min-width: 650px"
   >
-    <q-markup-table bordered separator="cell" class="no-shadow">
+    <q-markup-table  separator="horizontal" class="no-shadow">
       <thead>
         <tr>
           <th class="text-left">operator</th>
@@ -33,14 +33,14 @@
                 dense
                 :options="tables"
                 label="select table"
-                filled
+                borderless
               /><q-select
                 style="min-width: 130px"
                 v-model="item.column.name"
                 dense
                 label="select column"
                 :options="options.getTableColumns(item.column.table)"
-                filled
+                borderless
               />
             </div>
           </td>
@@ -50,7 +50,7 @@
               v-model="item.comparison"
               dense
               :options="supportedOperators"
-              filled
+              borderless
             />
           </td>
           <td style="min-width: 150px">
@@ -61,7 +61,7 @@
                 dense
                 :options="tables"
                 label="select table"
-                filled
+                borderless
               >
                 <template #append>
                   <q-btn
@@ -79,7 +79,7 @@
                 dense
                 label="select column"
                 :options="options.getTableColumns(item.value.column.table)"
-                filled
+                borderless
               >
               </q-select>
             </div>
@@ -93,7 +93,7 @@
                   })
                 "
                 label="payload."
-                filled
+                borderless
               >
                 <template #after>
                   <q-btn

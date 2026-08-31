@@ -14,15 +14,21 @@ const routes: RouteRecordRaw[] = [
         path: "",
         components: {
           default: () => import("../pages/IndexPage.vue"),
-          
+
           right: Placeholder("Inspector"),
+        },
+      },
+      {
+        path: "/view-dependency/:id",
+        components: {
+          default: () => import("../pages/viewDependency.vue"),
         },
       },
       {
         path: "project",
         components: {
           default: () => import("../pages/IndexPage.vue"),
-          
+
           right: Placeholder("Project Inspector"),
         },
       },
@@ -30,7 +36,7 @@ const routes: RouteRecordRaw[] = [
         path: "database",
         components: {
           default: Placeholder("Database Designer"),
-          
+
           right: Placeholder("DB Inspector"),
         },
       },
@@ -38,7 +44,7 @@ const routes: RouteRecordRaw[] = [
         path: "database/schema/:connection/:table",
         components: {
           default: () => import("../pages/TableSchemaPage.vue"),
-          
+
           right: Placeholder("Schema Inspector"),
         },
       },
@@ -46,15 +52,15 @@ const routes: RouteRecordRaw[] = [
         path: "database/query/:connection/:table",
         components: {
           default: () => import("../pages/QueryBuilder.vue"),
-          
+
           right: Placeholder("Query Inspector"),
         },
       },
       {
         path: "/api/:endPoint(.*)*",
         components: {
-          default: () => import("../pages/ApiBuilderPage.vue") ,
-          
+          default: () => import("../pages/ApiBuilderPage.vue"),
+
           right: Placeholder("API Inspector"),
         },
       },
@@ -62,7 +68,7 @@ const routes: RouteRecordRaw[] = [
         path: "plugins",
         components: {
           default: Placeholder("Plugin Market"),
-          
+
           right: Placeholder("Plugin Config"),
         },
       },
@@ -70,7 +76,7 @@ const routes: RouteRecordRaw[] = [
         path: "env",
         components: {
           default: Placeholder("Environment Variables"),
-          
+
           right: Placeholder("System Health"),
         },
       },
@@ -78,7 +84,7 @@ const routes: RouteRecordRaw[] = [
         path: "env/edit/:category/:name",
         components: {
           default: () => import("../pages/EnvEditorPage.vue"),
-          
+
           right: Placeholder("Config Inspector"),
         },
       },
@@ -87,7 +93,7 @@ const routes: RouteRecordRaw[] = [
         path: "env/update/:type",
         components: {
           default: () => import("../pages/UpdateEnvPage.vue"),
-          
+
           right: Placeholder("Update Monitor"),
         },
       },

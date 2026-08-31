@@ -85,7 +85,9 @@ function updatePayload(
 }
 const method = computed(() => props.method);
 
-function removeSpecificRow(index: number) {}
+function removeSpecificRow(index: number) {
+  props.payload.splice(index,1)
+}
 function getDataSource() {
   const sources = ["form", "param", "query"];
   if (["PUT", "POST"].includes(method.value!)) {
@@ -106,6 +108,9 @@ const modifyRows = (add: boolean) => {
     props.payload.pop();
   }
 };
+
+
+
 </script>
 
 <style scoped></style>

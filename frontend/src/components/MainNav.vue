@@ -52,7 +52,7 @@
           v-if="store.isExplorerOpen"
           class="col-grow bg-dark-soft border-right column overflow-hidden transition-base"
         >
-          <q-scroll-area class="col" style="height: calc(100% - 90px);" >
+          <q-scroll-area class="col" style="height: calc(100% - 90px);overflow-x: hidden;" >
         <component :is="sidePanels[store.activeLeftPanel as keyof c]"   ></component>
           </q-scroll-area>
         </div>
@@ -68,6 +68,7 @@ import DatabaseTablesPage from "../pages/leftPanel/DatabaseTablesPage.vue";
 import EndpointsPage from "../pages/leftPanel/EndpointsPage.vue";
 import PluginsPage from "../pages/leftPanel/PluginsPage.vue";
 import ProjectEnvPage from "../pages/leftPanel/ProjectEnvPage.vue";
+import Dependencies from "../pages/leftPanel/Dependencies.vue";
 
 const route = useRoute();
 const store = useAppContextStore();
@@ -78,6 +79,7 @@ const navItems = [
   { icon: "bi-table", label: "tables", to: "tables" },
   { icon: "bi-diagram-3", label: "api Endpoints", to: "api" },
   { icon: "bi-plugin", label: "Plugins", to: "plugins" },
+  { icon: "bi-layers", label: "Dependencies", to: "dependencies" },
   { icon: "bi-code", label: "Env", to: "env" },
 ];
 
@@ -87,7 +89,8 @@ const sidePanels = {
   tables:DatabaseTablesPage,
   api:EndpointsPage,
   plugins:PluginsPage,
-  env:ProjectEnvPage
+  env:ProjectEnvPage,
+  dependencies:Dependencies
 }
 type c = typeof sidePanels;
 // Sync current route to store

@@ -1,4 +1,7 @@
-export type SupportedOperators =
+import { EndPointData } from './../wailsjs/go/models';
+import { DatabaseOperations, Routes } from "./store/appContext";
+
+ type SupportedOperators =
   | "Equal to"
   | "Not equal to"
   | ">"
@@ -11,7 +14,7 @@ export type SupportedOperators =
   | "Not In"
   | "starts with"
   | "ends with";
-export type Condition = {
+ type Condition = {
   operator?: "AND" | "OR";
   column: {
     table: string;
@@ -27,3 +30,37 @@ export type Condition = {
     };
   };
 };
+
+
+ type UseOperationInfo = () => {
+    index: number;
+    routeData: Routes;
+    dbOperation: DatabaseOperations;
+}
+
+
+
+interface AttributeParam {
+ 
+    name: string;
+    value: 'string' | 'int' | 'float';
+    description?: string;
+    optional?:boolean,
+    variadic?:boolean
+  
+}
+
+interface DatabaseAttribute {
+  name: string;
+  description: string;
+  type: 'property' | 'function';
+  params?: AttributeParam[];  // Renamed from 'param' to 'params' (plural) for clarity
+}
+
+
+
+type OperationInfo ={
+ index:number,
+ routeData:EndPointData,
+ dbOperation:DatabaseOperations
+}

@@ -20,27 +20,17 @@ type ProjectResult struct {
 	Message string `json:"message"`
 }
 
-var AppDataDir = "./app-data"
-
 // GetProjectDir returns the base directory for lazy-backend projects
 func GetProjectDir() (string, error) {
-	const folderName = ".lazy-backend"
-
-	basePath, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("could not determine home directory: %v", err)
-	}
-
-	path := filepath.Join(basePath, folderName)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, 0755)
+	p := path.Join(APP_FOLDER, "projects")
+	if _, err := os.Stat(p); os.IsNotExist(err) {
+		err := os.MkdirAll(p, 0755)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	return path, nil
+	return p, nil
 }
 
 // CreateNewProject creates a new project directory with default config files
@@ -257,7 +247,7 @@ func SaveRecent(project []map[string]string) {
 }
 
 func GetRecent() []map[string]string {
-	data, err := os.ReadFile(path.Join(AppDataDir, "recent.json"))
+	data, err := os.ReadFile(path.Join(APP_FOLDER, "recent.json"))
 	if err != nil {
 		return nil
 	}
