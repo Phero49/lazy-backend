@@ -10,7 +10,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
 import Konva from 'konva'
-import { io } from '../../wailsjs/go/models';
 
 const props = defineProps<{
     currentTable: string,

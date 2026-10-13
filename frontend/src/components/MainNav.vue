@@ -1,62 +1,72 @@
 <template>
- <div class="row fit">
- <div
-    class=" col-auto column full-height items-center q-py-md bg-dark-soft border-right"
-  >
-    <!-- Main Navigation Items -->
-    <div class="column items-center q-gutter-y-sm full-width">
-      <q-btn
-        v-for="item in navItems"
-        :key="item.label"
-        flat
-        round
-        dense
-        :icon="item.icon"
-        @click="store.activeLeftPanel = item.to"
-        class="nav-btn transition-base"
-        active-class="active-nav-btn"
-      >
-        <q-tooltip
-          anchor="center right"
-          self="center left"
-          :offset="[14, 0]"
-          class="bg-grey-10 text-primary text-weight-bold text-uppercase tracking-widest border-primary"
+  <div class="row fit">
+    <div
+      class="col-auto column full-height items-center q-py-md bg-dark-soft border-right"
+    >
+      <!-- Main Navigation Items -->
+      <div class="column items-center q-gutter-y-sm full-width">
+        <q-btn
+          v-for="item in navItems"
+          :key="item.label"
+          flat
+          round
+          :disable="store.currentProject == null"
+          dense
+          :icon="item.icon"
+          @click="store.activeLeftPanel = item.to"
+          class="nav-btn transition-base"
+          active-class="active-nav-btn"
         >
-          {{ item.label }}
-        </q-tooltip>
-      </q-btn>
+          <q-tooltip
+            anchor="center right"
+            self="center left"
+            :offset="[14, 0]"
+            class="bg-grey-10 text-primary text-weight-bold text-uppercase tracking-widest border-primary"
+          >
+            {{ item.label }}
+          </q-tooltip>
+        </q-btn>
+      </div>
+
+      <q-space />
+
+      <!-- Bottom Actions -->
+      <div class="column items-center q-gutter-y-sm q-pb-md">
+        <q-btn
+          flat
+          round
+          dense
+          icon="bi-question-circle"
+          class="text-grey-7 hover-white"
+        />
+        <q-btn
+          flat
+          round
+          dense
+          icon="bi-gear"
+          to="/settings"
+          class="text-grey-7 hover-white"
+        />
+      </div>
     </div>
-
-    <q-space />
-
-    <!-- Bottom Actions -->
-    <div class="column items-center q-gutter-y-sm q-pb-md">
-      <q-btn
-        flat
-        round
-        dense
-        icon="bi-question-circle"
-        class="text-grey-7 hover-white"
-      />
-      <q-btn
-        flat
-        round
-        dense
-        icon="bi-gear"
-        to="/settings"
-        class="text-grey-7 hover-white"
-      />
+    <div
+      v-if="store.isExplorerOpen"
+      class="col-grow bg-dark-soft border-right column overflow-hidden transition-base"
+    >
+      <q-scroll-area
+        v-if="store.currentProject"
+        class="col"
+        style="height: calc(100% - 90px); overflow-x: hidden"
+      >
+        <component
+          :is="sidePanels[store.activeLeftPanel as keyof c]"
+        ></component>
+      </q-scroll-area>
+      <div v-else class="text-center text-subtitle1 q-py-xl">
+        open a project to start working
+      </div>
     </div>
   </div>
-   <div
-          v-if="store.isExplorerOpen"
-          class="col-grow bg-dark-soft border-right column overflow-hidden transition-base"
-        >
-          <q-scroll-area class="col" style="height: calc(100% - 90px);overflow-x: hidden;" >
-        <component :is="sidePanels[store.activeLeftPanel as keyof c]"   ></component>
-          </q-scroll-area>
-        </div>
- </div>
 </template>
 
 <script setup lang="ts">
@@ -74,7 +84,6 @@ const route = useRoute();
 const store = useAppContextStore();
 
 const navItems = [
-  { icon: "bi-folder", label: "Projects", to: "projects" },
   { icon: "bi-git", label: "changes", to: "changes" },
   { icon: "bi-table", label: "tables", to: "tables" },
   { icon: "bi-diagram-3", label: "api Endpoints", to: "api" },
@@ -84,14 +93,13 @@ const navItems = [
 ];
 
 const sidePanels = {
-  projects:ProjectsPage,
-  changes:ProjectsPage,
-  tables:DatabaseTablesPage,
-  api:EndpointsPage,
-  plugins:PluginsPage,
-  env:ProjectEnvPage,
-  dependencies:Dependencies
-}
+  changes: ProjectsPage,
+  tables: DatabaseTablesPage,
+  api: EndpointsPage,
+  plugins: PluginsPage,
+  env: ProjectEnvPage,
+  dependencies: Dependencies,
+};
 type c = typeof sidePanels;
 // Sync current route to store
 watch(

@@ -10,7 +10,8 @@ export const useOptions = defineStore('options',()=>{
         return appContext.activeSchema?.schema.entities.map((v)=>v.name) || []
     })
   
-    const getTableColumns = (table:string)=>{
+    const getTableColumns = (table?:string)=>{
+        
         const  entity = appContext.activeSchema?.schema.entities.find((v)=>v.name == table)
     if (entity) {
        return entity.fields.map((v)=>v.name)

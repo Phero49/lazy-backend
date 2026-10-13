@@ -14,6 +14,7 @@ import (
 var assets embed.FS
 
 func main() {
+	//os.Setenv("GTK_OVERLAY_SCROLLING", "0")
 	// Create an instance of the app structure
 	app := NewApp()
 

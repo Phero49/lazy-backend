@@ -5,16 +5,20 @@
       @update:model-value="updateValue"
       :false-value="false"
       :true-value="true"
-      v-model="text"
+      v-model="text" :disable="readOnly"
     />
   </span>
+  
   <span
     v-else
-    style="cursor: pointer; width: 100%; display: inline-block"
+    style="cursor: pointer; width: 100%; min-height: 15px;display: inline-block"
     class="row item-center"
   >
-    {{ text }}
-    <q-popup-proxy
+  <span v-if="text != null"> {{ text }}</span>
+  <span v-else >
+   -
+  </span>
+    <q-popup-proxy  v-if="!readOnly"
       ref="popupProxyRef"
       @hide="updateValue(text)"
       class="no-shadow"
@@ -107,7 +111,9 @@ interface Props {
   filled?: boolean;
   outlined?: boolean;
   dense?: boolean;
+  columnsOptions?:boolean
   clearable?: boolean;
+  readOnly?:boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   type: "input",
@@ -116,6 +122,7 @@ const props = withDefaults(defineProps<Props>(), {
   label: "Label",
   filled: false,
   outlined: false,
+  readOnly:false,
   dense: false,
   clearable: false,
 });
@@ -163,7 +170,7 @@ function onEnter(e: KeyboardEvent) {
     popupProxyRef.value?.hide();
     e.preventDefault();
   }
-}
+} 
 </script>
 
 <style scoped>

@@ -1,10 +1,27 @@
-/* Custom helper classes for Wails */
-.wails-drag {
-  --wails-draggable: drag;
-  -webkit-app-region: drag;
+/* For the scrollable element */
+.custom-scroll {
+  /* Force WebKit scrollbar rendering by overriding standard props */
+  scrollbar-width: auto;
+  scrollbar-color: auto;
 }
 
-.wails-nodrag {
-  --wails-draggable: no-drag;
-  -webkit-app-region: no-drag;
+/* Your desired thin WebKit scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  width: 8px;  /* Set your desired width */
+  height: 8px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent; /* Or your desired track color */
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #ad0000; /* Your desired thumb color */
+  border-radius: 4px;
+  border: 2px solid transparent; /* Creates padding around thumb */
+  background-clip: content-box;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
 }

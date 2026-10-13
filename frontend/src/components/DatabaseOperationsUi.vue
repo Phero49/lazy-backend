@@ -1,13 +1,15 @@
 <template>
+
+ 
+
   <q-expansion-item expand-icon="bi-chevron-up">
     <template #header>
       <div class="row col items-center justify-between">
         <div class="">
           {{ dbOperation.name || "step name" }}
         </div>
-        <div class="col" >
-          <slot name="condition" ></slot>
-
+        <div class="col">
+          <slot name="condition"></slot>
         </div>
         <q-space />
 
@@ -138,7 +140,7 @@
               removable
               dense
               clickable
-              @click="removeTable(i)"
+              @click="removeTable(i,t.table)"
               :label="t.table"
             />
 
@@ -158,8 +160,7 @@
                       :data="dbOperation.query.tables[i + 1].join"
                       :tableToJoin="dbOperation.query.tables[i + 1].table"
                       :operation-index="index"
-                      :table-index="i+1"
-                     
+                      :table-index="i + 1"
                       :tablesAvailableToJoinWith="
                         dbOperation.query.tables
                           .map((v) => v.table)
@@ -175,13 +176,12 @@
                           addJoinCondition(
                             i + 1,
                             dbOperation.query.tables[i].table,
-                            dbOperation.query.tables[i + 1].table
+                            dbOperation.query.tables[i + 1].table,
                           )
                         "
                         no-caps
                         unelevated
                       />
-
                     </div>
                   </div>
                 </q-card>
@@ -228,27 +228,46 @@
               removable
               clickable
               :icon-remove="biXCircleFill"
-              @remove="()=>{
-                operations.columns.splice(i, 1)              }"
+              @remove="
+                removeColumn(i)
+              "
             >
-              <q-menu context-menu >
-           <column-attributes-selector 
-           :col-index="i"
-           :column="value"
-           :data="{
-            dbOperation:dbOperation,
-            index:index,
-            routeData:endPointData
-           }" />
+              <q-menu context-menu @hide="appContext.saveApi()">
+                <column-attributes-selector
+                  :col-index="i"
+                  :column="value"
+                  :data="{
+                    dbOperation: dbOperation,
+                    index: index,
+                    routeData: endPointData,
+                  }"
+                />
               </q-menu>
             </q-chip>
           </div>
 
           <q-btn color="grey-8" size="sm" dense icon="bi-plus" class="q-px-sm">
-            <q-menu  anchor="bottom end" self="top start" flat class="no-shadow">
+            <q-menu anchor="bottom end" self="top start" flat class="no-shadow">
               <select-columns
                 @updated="columnsUpdated"
                 :tables="dbOperation.query.tables.map((v) => v.table)"
+              />
+            </q-menu>
+            <q-menu context-menu>
+              <column-attributes-selector
+                @close="
+                  (column) => {
+                    dbOperation.query.columns.push(column);
+                  }
+                "
+                :col-index="dbOperation.query.columns.length"
+                alias-required
+                :column="initColumn"
+                :data="{
+                  dbOperation: dbOperation,
+                  index: index,
+                  routeData: endPointData,
+                }"
               />
             </q-menu>
           </q-btn>
@@ -321,7 +340,7 @@ import {
   mdiSetCenter,
   mdiSetAll,
 } from "@quasar/extras/mdi-v7";
-import { provide, ref } from "vue";
+import { provide, reactive, ref } from "vue";
 import { useOptions } from "../store/optionsRegistry";
 import CustomSelector from "./customSelector.vue";
 import SelectComuns from "./selectComuns.vue";
@@ -345,25 +364,28 @@ const startAt = ref("0");
 const endAt = ref("10");
 const batch = ref(10);
 const props = defineProps<{
-  index:number
+  index: number;
   endPointData: Routes;
   dbOperation: DatabaseOperations;
 }>();
 const filterTables = ref("");
 const testOperation = () => {
-  testOperationBlock()
+  testOperationBlock();
 };
 const deleteOperation = () => {};
 const options = useOptions();
+const initColumn = reactive({
+  column: "",
+  alias: "custom-column",
+  attributes: [],
+});
 const emits = defineEmits<{ updatePayload: [boolean] }>();
-const useOperationInfo = ()=>({
- index:props.index,
- routeData:props.endPointData,
- dbOperation:props.dbOperation
-})
-provide("useOperationInfo",useOperationInfo)
-
-
+const useOperationInfo = () => ({
+  index: props.index,
+  routeData: props.endPointData,
+  dbOperation: props.dbOperation,
+});
+provide("useOperationInfo", useOperationInfo);
 
 const operations = ref<DatabaseQuery>({
   columns: [],
@@ -402,7 +424,7 @@ const addJoinCondition = (
   rightTable: string,
   isNew = false,
 ) => {
-  console.log("addJoinCondition",  leftTable, rightTable);
+  console.log("addJoinCondition", leftTable, rightTable);
   props.dbOperation.query.tables[tableIndex]?.join?.conditions.push({
     leftColumn: "---",
     leftTable: leftTable,
@@ -421,9 +443,14 @@ const addWhereCondition = (condition: Condition[]) => {
   props.dbOperation.query.where = condition;
   appContext.saveApi();
 };
-function removeTable(index: number) {
+function removeTable(index: number,name:string) {
   props.dbOperation.query.tables.splice(index, 1);
+  props.dbOperation.query.columns = props.dbOperation.query.columns.filter((v)=>v.column.toLowerCase() != name.toLocaleLowerCase())
   appContext.saveApi();
+}
+function removeColumn(index:number){
+  props.dbOperation.query.columns.splice(index,1)
+  appContext.saveApi()
 }
 
 function columnsUpdated(v: string, b: boolean) {

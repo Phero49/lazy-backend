@@ -1,6 +1,6 @@
 <template>
   <q-card flat style="max-width: 500px; width: 500px" class="my-card q-px-md">
-    <q-input v-model="alias" dense type="text" label="alias" />
+    <q-input v-model="column.alias" dense type="text" label="column alias" :hint="`alias for column ${column.column}`" />
     <q-markup-table separator="cell" class="q-mt-md">
       <thead>
         <tr>
@@ -17,11 +17,8 @@
             </q-tooltip>
           </td>
           <td>
-            <span v-if="attr.isFunction"> ( </span>
-            <span
-              v-for="(param, index) in getFullAttribute(attr.name)?.params"
-              :key="index"
-            >
+            <span v-if="attr.isFunction" class="text-h6"> ( </span>
+            <span v-for="(param, index) in attr.values" :key="index">
               <q-menu context-menu>
                 <q-list style="min-width: 100px">
                   <q-item
@@ -66,13 +63,15 @@
                 <span v-if="attr.values[index].source === 'column'"
                   ><span
                     contenteditable
-                    @focus="()=>{
-                      editingOn = index
-                    }"
+                    @focus="
+                      () => {
+                        editingOn = index;
+                      }
+                    "
                     @blur="
                       (e) => {
                         const t = e.target as HTMLSpanElement;
-                        attr.values[index].table = t.textContent;
+                        attr.values[index].table = t.textContent || '';
                       }
                     "
                     style="outline-color: #c8c8c8"
@@ -88,7 +87,7 @@
                   @blur="
                     (e) => {
                       const t = e.target as HTMLSpanElement;
-                      attr.values[index].value = t.textContent;
+                      attr.values[index].value = t.textContent || '';
                     }
                   "
                   style="outline-color: #c8c8c8"
@@ -96,52 +95,124 @@
                   {{
                     attr.values[index].value
                       ? attr.values[index].value
-                      : param.name
+                      : "value"
                   }}
                 </span>
+                <q-tooltip
+                  class="bg-black text-body2"
+                  v-if="editingOn !== index"
+                >
+                  <div>
+                    {{  getAttrParam(attr.name,i)?.description || 'no  description' }}
+                  </div>
+                </q-tooltip>
+                <q-menu hover v-else>
+                  <div class="q-pa-md" style="width: 500px; max-width: 90vw">
+                    <!-- Popup title -->
+                    <div class="text-center text-bold text-grey">
+                      Select table & column
+                    </div>
+
+                    <q-separator spaced />
+
+                    <!-- Two-panel selector -->
+                    <div class="row no-wrap">
+                      <!-- Tables -->
+                      <div class="col-5">
+                        <div class="text-caption text-grey q-mb-sm">Tables</div>
+
+                        <q-list separator>
+                          <q-item
+                            v-for="(
+                              table, tIndex
+                            ) in data.dbOperation.query.tables.map(
+                              (v) => v.table,
+                            )"
+                            :key="tIndex"
+                            clickable
+                            class="text-white"
+                            v-ripple
+                            :active="attr.values[index].table === table"
+                            @click="attr.values[index].table = table"
+                          >
+                            <q-item-section>
+                              <q-item-label>
+                                <q-icon name="bi-table" class="q-mr-sm" />
+                                {{ table }}
+                              </q-item-label>
+                            </q-item-section>
+
+                            <q-item-section side>
+                              <q-icon
+                                v-if="attr.values[index].table === table"
+                                :name="symRoundedCheckBox"
+                              />
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </div>
+                      <div class="col-1">
+                        <q-separator vertical />
+                      </div>
+                      <!-- Columns -->
+                      <div class="col-6 q-ml-md">
+                        <div class="text-caption text-grey q-mb-sm">
+                          Columns —
+                          {{ attr.values[index].table || "Select a table" }}
+                        </div>
+
+                        <q-list separator v-if="attr.values[index].table">
+                          <q-item
+                            clickable
+                            @click="
+                              () => {
+                                attr.values[index].value = column;
+                              }
+                            "
+                            v-for="(
+                              column, colIndex
+                            ) in useOptions().getTableColumns(
+                              attr.values[index].table,
+                            )"
+                            :key="colIndex"
+                          >
+                            {{ column }}
+                          </q-item>
+                        </q-list>
+                        <div v-else class="text-center">NO TABLE selected</div>
+                      </div>
+                    </div>
+                  </div>
+                </q-menu>
               </span>
-              <span v-if="!param.optional" class="text-red text-subtitle1"
+              <span v-if="!getAttrParam(attr.name,i)?.optional" class="text-red text-subtitle1"
                 >*</span
               >,
-              <q-tooltip class="bg-black text-body2" v-if="editingOn !== index" >
-               <div >
-                {{ param.description }}
-               </div> 
-               
-              </q-tooltip>
-              <q-menu hover   v-else>
-             <div class="q-pa-md" style="min-width: 300px;" >
-                <div class="text-center text-bold text-grey" >Select table</div>
-                <q-separator spaced  />
-                <q-list >
-                  <q-item clickable @click="attr.values[index].table = table" v-ripple v-for="(table, tIndex) in data.dbOperation.query.tables.map((v)=>v.table)" :key="tIndex">
-                  <q-item-section side avatar>
-                    <q-avatar size="sm" color="white">
-                                    <q-icon color="black" name="bi-table" />
-      
-                    </q-avatar>
-                  </q-item-section>
-                    <q-item-section>
-                      <q-item-label lines="1">
-{{ table }}
-                      </q-item-label>
-                      </q-item-section>
-                      <q-item-section side>
-               <q-icon
-                        :name="
-                         attr.values[index].table === table
-                            ? symRoundedCheckBox
-                            : symRoundedSquare
-                        "
-                        color="white"
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-               </div>
-               </q-menu>
+
+              <span v-if="getAttrParam(attr.name,i)?.variadic">
+                <q-btn
+                  color="grey-9"
+                  unelevated
+                  icon="add"
+                  size="8px"
+                  dense
+                  @click="
+                    () => {
+                      attr.values.push({
+                        source: 'static',
+                        value: 'arg',
+                        table: undefined,
+                      });
+                    }
+                  "
+                >
+                  <q-tooltip class="bg-black text-body2">
+                    Add another argument for this parameter
+                  </q-tooltip>
+                </q-btn>
+              </span>
             </span>
-            <span v-if="attr.isFunction"> ) </span>
+            <span v-if="attr.isFunction" class="text-h6"> ) </span>
           </td>
         </tr>
       </tbody>
@@ -448,14 +519,16 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeMount, ref, computed, reactive } from "vue";
+import { onBeforeMount, ref, computed, reactive, onBeforeUnmount } from "vue";
 import { DatabaseAttribute, OperationInfo } from "..";
 import { importDatabaseColumnAttributes } from "~/client/database";
 import { DatabaseQuery } from "../store/appContext";
 import {
+  symRoundedCheck,
   symRoundedCheckBox,
   symRoundedSquare,
 } from "@quasar/extras/material-symbols-rounded";
+import { useOptions } from "~/store/optionsRegistry";
 
 const attributes = ref<DatabaseAttribute[]>([]);
 
@@ -466,7 +539,9 @@ const props = defineProps<{
   data: OperationInfo;
   column: DatabaseQuery["columns"][0];
   colIndex: number;
+  aliasRequired?:boolean
 }>();
+const emits = defineEmits<{close:[DatabaseQuery["columns"][0]]}>()
 const alias = ref("");
 const includeColumnValue = reactive<Record<string, string>>({});
 const editingOn = ref();
@@ -487,8 +562,22 @@ function addAttribute(attr: DatabaseAttribute) {
   });
 }
 
+const getAttrParam = (name: string, paramIndex: number) => {
+  const attr = attributes.value.find((v) => v.name == name);
+  if (paramIndex && attr) {
+    const param = attr.params![paramIndex];
+
+    if (param) {
+      return param;
+    } else {
+      return attr.params?.at(-1);
+    }
+  }
+};
 const getFullAttribute = (name: string) => {
-  return attributes.value.find((v) => v.name == name);
+  const attr = attributes.value.find((v) => v.name == name);
+
+  return attr;
 };
 // Filtered attributes based on search query - client-side filtering only
 const filteredAttributes = computed(() => {
@@ -600,6 +689,9 @@ const fetchAttributes = async () => {
 onBeforeMount(async () => {
   await fetchAttributes();
 });
+onBeforeUnmount(()=>{
+  emits('close',props.column)
+})
 </script>
 
 <style scoped>
@@ -622,17 +714,7 @@ onBeforeMount(async () => {
   overflow-y: auto;
 }
 
-/* Scrollable tooltip content */
-:deep(.q-tooltip)::-webkit-scrollbar {
-  width: 4px;
-}
-:deep(.q-tooltip)::-webkit-scrollbar-track {
-  background: #2a2a2a;
-}
-:deep(.q-tooltip)::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 2px;
-}
+
 
 /* Loading animation */
 @keyframes fadeIn {
@@ -660,15 +742,5 @@ onBeforeMount(async () => {
     max-width: 250px !important;
   }
 }
-.native-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-.native-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-.native-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
+
 </style>

@@ -29,9 +29,9 @@ var RunningPlugins = make([]struct {
 }, 0)
 
 func GetDevServerPort() int {
+
 	return PORT
 }
-
 func portIsAvailable(port string) error {
 	ln, err := net.Listen("tcp", port)
 	if err != nil {
@@ -324,7 +324,7 @@ func StopAllPlugins() {
 	for name, rp := range runningPlugins {
 		rp.Cancel()
 		delete(runningPlugins, name)
-		fmt.Printf("[devserver] Stopped plugin '%s'\n", name)
+		fmt.Printf("[devserver] Stopped plugin '%s'\n\n", name)
 	}
 }
 

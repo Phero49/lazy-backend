@@ -20,11 +20,11 @@
                   <q-form @submit="savePrefix()" class="q-gutter-md">
                     <q-input
                       dense
-                      hint="eg /api/v1/auth/"
+                      hint="eg api/v1/auth"
                       v-model="prefix"
                       :rules="[
                         (val: string) =>
-                          (val || '').length > 0 || 'Prefix cannot be empty',
+                          (val || '').trim().length > 0 || 'Prefix cannot be empty',
                       ]"
                       type="text"
                       label="create prefix"
@@ -160,135 +160,23 @@
       <template
         v-for="(value, childIndex) in endpoint.children"
         :key="childIndex"
-      >
+      > 
+        
+
         <!-- If it has 'children', it's a nested folder - render recursively -->
         <EndpointTreeNode
           v-if="value && typeof value === 'object' && 'children' in value"
           :endpoint="value"
           :i="childIndex"
+          :current-path="value.prefix"
+          :full-path="[currentPath, value.prefix]"
           :level="[i, childIndex]"
         />
-
+      
         <!-- If it has 'path', it's a route object - render with its own context menu -->
-        <div
-          v-else-if="value && typeof value === 'object' && 'path' in value"
-          class="row q-py-xs"
-          style="cursor: pointer"
-        >
-          <q-menu
-            @hide="appContext.saveApi()"
-            :offset="[10, 0]"
-            context-menu
-            class="no-shadow"
-          >
-            <q-list bordered style="min-width: 150px" separator>
-              <q-item clickable>
-                <q-item-section> Edit route path</q-item-section>
-                <q-menu class="no-shadow" anchor="top right">
-                  <q-card
-                    bordered
-                    flat
-                    style="min-width: 200px"
-                    class="q-pa-md"
-                  >
-                    <q-form>
-                      <q-input
-                        dense
-                        @update:model-value="
-                          (v) => {
-                            value.path = (v as string).trim().replace(' ', '_');
-                          }
-                        "
-                        v-model="value.path"
-                        label="edit path name"
-                      >
-                        <template #append>
-                          <q-btn
-                            flat
-                            class="bg-white text-black"
-                            v-close-popup
-                            no-caps
-                            size="sm"
-                            dense
-                            label="Save"
-                          />
-                        </template>
-                      </q-input>
-                    </q-form>
-                  </q-card>
-                </q-menu>
-              </q-item>
-              <q-item clickable>
-                <q-menu
-                  @hide="appContext.saveApi()"
-                  class="no-shadow"
-                  anchor="top right"
-                >
-                  <q-card
-                    bordered
-                    flat
-                    style="min-width: 200px"
-                    class="q-pa-md"
-                  >
-                    <q-form>
-                      <q-select
-                        dense
-                        v-model="value.method"
-                        :options="['GET', 'POST', 'PUT', 'DELETE', 'PATCH']"
-                        label="HTTP method"
-                        behavior="menu"
-                      >
-                        <template #append>
-                          <q-btn
-                            flat
-                            class="bg-white text-black"
-                            v-close-popup
-                            no-caps
-                            size="sm"
-                            dense
-                            label="Save"
-                          />
-                        </template>
-                      </q-select>
-                    </q-form>
-                  </q-card>
-                </q-menu>
-                <q-item-section
-                  >Change method ({{ value.method }})</q-item-section
-                >
-              </q-item>
-              <q-item clickable @click="deleteRoute(childIndex)" v-close-popup>
-                <q-item-section>Remove route</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-          <div
-            style="cursor: pointer"
-            @click="
-              appContext.createNewTab(
-                `/api/${endpoint.prefix}/${value.path}`,
-                `${value.method} ${value.path}`,
-                'bi-code-slash',
-                {
-                  level: [...level, childIndex].join(','),
-                },
-              )
-            "
-            class="text-subtitle2 text-grey"
-          >
-            <div class="row">
-              <div class="">
-                <q-badge
-                  class="q-mr-sm method-badge"
-                  :class="value.method.toLowerCase()"
-                  :label="value.method"
-                />
-
-                {{ value.path }}
-              </div>
-            </div>
-          </div>
-        </div>
+      <EndpointRouteFragment  v-else-if="value && typeof value === 'object' && 'path' in value"
+      :level="level" :child-index="childIndex" :value="value" />
+    
       </template>
     </div>
   </div>
@@ -305,10 +193,14 @@ import {
   EndPointList,
   HTTPMethods,
   Routes,
+  ensureNestedEndpoint,
+  findNestedEndpoint,
+  normalizeEndpointSegments,
   useAppContextStore,
 } from "../store/appContext";
 import { ref } from "vue";
 import { useQuasar } from "quasar";
+import EndpointRouteFragment from "~/pages/EndpointRouteFragment.vue";
 
 defineOptions({
   name: "EndpointTreeNode",
@@ -317,6 +209,8 @@ defineOptions({
 const props = defineProps<{
   endpoint: EndPointList;
   i: number;
+  currentPath: string;
+  fullPath: string[];
   level: number[];
 }>();
 const appContext = useAppContextStore();
@@ -329,24 +223,31 @@ const newRouteMethod = ref("GET");
 const editingName = ref("");
 const $q = useQuasar();
 const editRout = ref("");
+const routeBase = `/api/${props.fullPath.join("/")}/`;
+
+
 const savePrefix = (index?: number) => {
-  const newEndPoint: EndPointList = {
-    prefix: prefix.value,
-    children: [],
-    collapsed: true,
-  };
-  const l = index ? [...props.level, index] : props.level;
-  const find = appContext
-    .getEndPoint(l)
-    ?.children.find(
-      (v) =>
-        (v as EndPointList).prefix.replace("/", "").toLowerCase() ==
-        prefix.value.replace("/", "").toLowerCase(),
-    );
-  if (!find) {
-    appContext.getEndPoint(props.level)?.children.push(newEndPoint);
-    appContext.saveApi();
+  const segments = normalizeEndpointSegments(prefix.value);
+  if (!segments.length) {
+    $q.notify({
+      type: "negative",
+      message: 'couldn\'t save prefix because it is empty.',
+    });
+    return;
   }
+
+  const endpoint = appContext.getEndPoint(props.level);
+  if (!endpoint) {
+    return;
+  }
+
+  if (findNestedEndpoint(endpoint, segments)) {
+    $q.notify({ message: "prefix already exists", type: "negative" });
+    return;
+  }
+
+  ensureNestedEndpoint(endpoint, segments);
+  appContext.saveApi();
   prefix.value = "";
 };
 
@@ -356,27 +257,37 @@ const saveRoute = () => {
     return;
   }
 
-  if (newRoutePath.value.trim()) {
-    const normalizePath = newRoutePath.value
-      .trim()
-      .replace(" ", "_")
-      .toLowerCase();
-    const exists = endpoint.children.map(
-      (v) =>
-        (v as Routes).path == normalizePath &&
-        newRouteMethod.value == (v as Routes).method,
-    );
-    if (exists != undefined) {
-      $q.notify({ message: "path already exists", type: "negative" });
-      return;
-    }
-    endpoint.children.push({
-      path: normalizePath,
-      method: newRouteMethod.value as HTTPMethods,
-    });
-    newRoutePath.value = "";
-    newRouteMethod.value = "GET";
+  const routeSegments = normalizeEndpointSegments(newRoutePath.value);
+  if (!routeSegments.length) {
+    return;
   }
+
+  const routeName = routeSegments[routeSegments.length - 1];
+  const parentSegments = routeSegments.slice(0, -1);
+  const routeParent =
+    parentSegments.length > 0
+      ? ensureNestedEndpoint(endpoint, parentSegments)
+      : endpoint;
+  const normalizedPath = [...props.fullPath, ...routeSegments].join("/");
+
+  const exists = routeParent.children.find(
+    (v) =>
+      (v as Routes).path == normalizedPath &&
+      newRouteMethod.value == (v as Routes).method,
+  );
+
+  if (exists != undefined) {
+    $q.notify({ message: "path already exists", type: "negative" });
+    return;
+  }
+
+  routeParent.children.push({
+    name: routeName,
+    path: normalizedPath,
+    method: newRouteMethod.value as HTTPMethods,
+  });
+  newRoutePath.value = "";
+  newRouteMethod.value = "GET";
   appContext.saveApi();
 };
 
@@ -384,10 +295,6 @@ const deleteEndPont = (index?: number) => {
   appContext.deleteEndPont(props.level);
 };
 
-const deleteRoute = (index: number) => {
-  appContext.getEndPoint(props.level)?.children.splice(index, 1);
-  //  props.endpoint.children?.splice(index, 1);
-};
 
 const saveRename = () => {
   if (editingName.value.trim()) {

@@ -11,13 +11,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import("../layout/MainLayout.vue"),
     children: [
       {
-        path: "",
-        components: {
-          default: () => import("../pages/IndexPage.vue"),
+        path: "/",
+        component: () => import("../pages/IndexPage.vue")
+},
+   
 
-          right: Placeholder("Inspector"),
-        },
-      },
+
       {
         path: "/view-dependency/:id",
         components: {

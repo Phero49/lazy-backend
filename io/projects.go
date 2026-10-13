@@ -229,7 +229,7 @@ func SaveProjectSchema(projectName string, schema map[string]IntermediateSchema)
 		return ProjectResult{Success: false, Message: fmt.Sprintf("Failed to marshal schema: %v", err)}
 	}
 
-	err = os.WriteFile(schemaPath, schemaBytes, 0644)
+	err = os.WriteFile(schemaPath, schemaBytes, 0755)
 	if err != nil {
 		return ProjectResult{Success: false, Message: fmt.Sprintf("Failed to write schema file: %v", err)}
 	}
@@ -243,7 +243,7 @@ func SaveRecent(project []map[string]string) {
 		os.MkdirAll(projectRootDir, 0755)
 	}
 	projectJson, _ := json.Marshal(project)
-	os.WriteFile(path.Join(projectRootDir, "recent.json"), projectJson, 0644)
+	os.WriteFile(path.Join(projectRootDir, "recent.json"), projectJson, 0755)
 }
 
 func GetRecent() []map[string]string {
@@ -279,5 +279,18 @@ func GetApiSchema(project string) ([]any, error) {
 
 	err = json.Unmarshal(data, &marshaledData)
 	return marshaledData, err
+
+}
+
+type ProjectState struct {
+	ActiveTabId  int `json:"activeId"`
+	OpenedTables []map[string]any
+}
+
+func SaveState(project string, state ProjectState) error {
+	project, err := resolveProjectPath(project)
+	return err
+	fmt.Println(project)
+	return nil
 
 }

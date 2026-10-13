@@ -1,5 +1,6 @@
 <template>
   <div v-if="$route.params['endPoint'] && endPointData">
+   
     <div>
       <q-expansion-item
         expand-separator
@@ -20,42 +21,23 @@
       class="q-ma-md"
       v-for="(value, i) in endPointData.data?.operations || []"
     >
-      <DatabaseOperationsUi
-        :index="i"
-        :end-point-data="endPointData"
-        :db-operation="value"
-        @update-payload="endPoint.updateLimitPayload"
-      >
-        <template #condition>
-          <div class="q-px-sm" style="cursor: pointer" @click.stop>
-            <q-select
-              @click.stop
-              dense
-              v-model="activeCondition"
-              :options="['fff']"
-              label="Select Condition"
-              filled
-            >
-              <template #before-options>
-                <div>
+      <OperationBlock 
+      :previous-block-has-if="endPointData.data?.operations[i - 1]?.condition != null"
+      :route="endPointData" 
+      
+      :index="i">
+        <template #main>
+          <DatabaseOperationsUi
+            v-if="value.databaseBlock"
+            :index="i"
+            :end-point-data="endPointData"
+            :db-operation="value.databaseBlock"
+            @update-payload="endPoint.updateLimitPayload"
+          >
            
-                  <div class="text-center q-py-md">
-                    <q-btn
-                      color="grey"
-                      no-caps
-                      class="text-capitalize"
-                      unelevated
-                      icon="add"
-                      label="add new condition"
-                      @click="() => null"
-                    />
-                  </div>
-                </div>
-              </template>
-            </q-select>
-          </div>
+          </DatabaseOperationsUi>
         </template>
-      </DatabaseOperationsUi>
+      </OperationBlock>
     </div>
     <div class="text-center">
       <q-btn
@@ -64,13 +46,18 @@
         :icon="symRoundedStepInto"
         @click="
           endPointData.data?.operations.push({
-            databaseAction: 'SELECT',
-            name: '',
-            query: {
-              tables: [],
-              columns: [],
-              where: [],
+            databaseBlock: {
+              databaseAction: 'SELECT',
+              name: '',
+              query: {
+                tables: [],
+                columns: [],
+                where: [],
+              },
             },
+            type: 'database',
+            children: [],
+            condition: null,
           });
           appContext.saveApi();
         "
@@ -119,6 +106,7 @@ import { useRoute } from "vue-router";
 import { date } from "quasar";
 import EndpointPayload from "../components/EndpointPayload.vue";
 import { useEndPointContext } from "../composable/EndpointBulder";
+import OperationBlock from "~/components/operationBlock.vue";
 
 const route = useRoute();
 const level = computed(() =>

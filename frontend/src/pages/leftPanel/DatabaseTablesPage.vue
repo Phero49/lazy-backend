@@ -44,12 +44,7 @@
             </div>
           </q-item-section>
           <q-item-section side>
-            <q-badge
-              :label="`${activeConnections.size} connected`"
-              color="grey-10"
-              text-color="grey-6"
-              style="font-size: 9px"
-            />
+           
           </q-item-section>
         </template>
 
@@ -60,54 +55,30 @@
               :key="config.name"
               clickable
               class="q-mx-sm border-radius-sm"
-              :active="appContext.activeConnectionName === config.name"
+              :active="appContext.activeConnectionName === config.label"
               active-class="active-db-item"
-              @click="selectDatabase(config.name)"
+              @click="selectDatabase(config.label)"
             >
               <q-item-section avatar class="min-width-auto q-pr-sm">
                 <q-icon
                   :name="
-                    activeConnections.has(config.name)
+                    activeConnections.has(config.label)
                       ? 'bi-database-fill'
                       : 'bi-database'
                   "
                   :color="
-                    activeConnections.has(config.name) ? 'primary' : 'grey-8'
+                    appContext.activeConnectionName === config.label  ? 'primary' : 'grey-8'
                   "
                   size="13px"
                 />
+               
               </q-item-section>
               <q-item-section class="text-caption">{{
                 config.label
               }}</q-item-section>
               <q-item-section side>
-                <q-spinner-dots
-                  v-if="connecting === config.name"
-                  color="primary"
-                  size="xs"
-                />
-                <template v-else>
-                  <q-btn
-                    v-if="!activeConnections.has(config.name)"
-                    flat
-                    round
-                    dense
-                    icon="bi-play-fill"
-                    size="xs"
-                    color="grey-8"
-                    @click.stop="connect(config)"
-                  />
-                  <q-btn
-                    v-else
-                    flat
-                    round
-                    dense
-                    icon="bi-stop-fill"
-                    size="xs"
-                    color="red-5"
-                    @click.stop="disconnect(config.name)"
-                  />
-                </template>
+             
+            
               </q-item-section>
             </q-item>
           </q-list>
@@ -229,7 +200,6 @@
         </div>
       </q-list>
     </div>
-
     <!-- Empty States -->
     <!-- <div
       v-else
@@ -255,107 +225,27 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
-import {
-  GetProjectEnv,
-  GetTableList,
-  ImportDatabaseSchema,
-} from "../../../wailsjs/go/main/App";
 import { useAppContextStore, WorkspaceTab } from "../../store/appContext";
-import { useQuasar } from "quasar";
-import { mapLabel } from "../../utils/utills";
+import { useDatabaseSchema } from "../../../composables/databaseSchema";
+import { openNewDatabaseTab } from "~/utils/databaseUtills";
 
 const router = useRouter();
-
 const appContext = useAppContextStore();
-const $q = useQuasar();
-
-interface DBProfile {
-  name: string;
-  label: string;
-  config: any;
-}
-
-const configurations = ref<DBProfile[]>([]);
-const activeConnections = ref<Map<string, string[]>>(new Map()); // Name -> Tables
-const connecting = ref<string | null>(null);
-const loadingTables = ref(false);
-const tableFilter = ref("");
-const newTable = ref("");
-const allTables = computed<string[]>(
-  () =>
-    appContext.databaseSchemas[
-      appContext.activeConnectionName!
-    ].schema.entities.map((v) => v.name) || [],
-);
-
-const filteredTables = computed(() => {
-  if (!appContext.activeConnectionName) return [];
-  const tables = allTables.value || [];
-  if (!tableFilter.value) return tables;
-  const search = tableFilter.value.toLowerCase();
-  return tables.filter((t: string) => t.toLowerCase().includes(search));
-});
-
-async function loadConfigurations() {
-  if (!appContext.currentProject) return;
-  try {
-    const env = await GetProjectEnv(appContext.currentProject);
-    const dbList = env.database || [];
-    configurations.value = dbList.map((item: any) => {
-      const value = Object.keys(item)[0];
-      const label = mapLabel("database", item);
-      return {
-        name: value,
-        label,
-        config: item[value],
-      };
-    });
-  } catch (error) {
-    console.error("Failed to load configurations:", error);
-  }
-}
-
-async function connect(profile: DBProfile) {
-  connecting.value = profile.label;
-  try {
-    // const tables = await GetTableList(
-    //   profile.config.host,
-    //   profile.config.port,
-    //   profile.config.user,
-    //   profile.config.password,
-    //   profile.config.database,
-    // );
-
-    //  activeConnections.value.set(profile.label, tables);
-    appContext.setActiveConnection(profile.label);
-
-    // const schema = await ImportDatabaseSchema(
-    //   profile.config.host,
-    //   profile.config.port,
-    //   profile.config.user,
-    //   profile.config.password,
-    //   profile.config.database,
-    // );
-    // console.log(schema);
-    // appContext.setDatabaseSchema(profile.label, schema);
-
-    $q.notify({
-      type: "positive",
-      message: `Connected to ${profile.label}`,
-      timeout: 1000,
-      position: "bottom-right",
-    });
-  } catch (error: any) {
-    $q.notify({
-      type: "negative",
-      message: `Connection failed: ${error}`,
-    });
-  } finally {
-    connecting.value = null;
-  }
-}
+const {
+  configurations,
+  activeConnections,
+  connecting,
+  loadingTables,
+  tableFilter,
+  newTable,
+  filteredTables,
+  allTables,
+  connect,
+  selectDatabase,
+  disconnect,
+  refreshTables,
+} = useDatabaseSchema();
 
 async function createTable() {
   await appContext.createNewTable(newTable.value);
@@ -364,76 +254,19 @@ async function createTable() {
   newTable.value = "";
 }
 
-function selectDatabase(name: string) {
-  if (activeConnections.value.has(name)) {
-    appContext.setActiveConnection(name);
-  } else {
-    const profile = configurations.value.find((c) => c.name === name);
-    if (profile) connect(profile);
-  }
-}
-
-function disconnect(name: string) {
-  activeConnections.value.delete(name);
-  if (appContext.activeConnectionName === name) {
-    const next =
-      activeConnections.value.size > 0
-        ? Array.from(activeConnections.value.keys())[0]
-        : null;
-    appContext.setActiveConnection(next);
-  }
-}
-
 function openTableSchema(connectionName: string, tableName: string) {
-  const tab: WorkspaceTab = {
-    id: `schema-${connectionName}-${tableName}`,
-    label: `${tableName}`,
-    icon: "bi-layout-text-sidebar-reverse",
-    path: `/database/schema/${connectionName}/${tableName}`,
-    category: "database",
-    isReadonly: true,
-    query: {},
-  };
-  appContext.openTab(tab);
-  router.push(tab.path);
+ const path = `/database/schema/${connectionName}/${tableName}`
+
+  openNewDatabaseTab(path,tableName,)
+
+  router.push(path);
 }
 
-async function refreshTables(connectionName: string) {
-  const profile = configurations.value.find((c) => c.name === connectionName);
-  if (!profile) return;
-
-  loadingTables.value = true;
-  try {
-    const tables = await GetTableList(
-      profile.config.host,
-      profile.config.port,
-      profile.config.user,
-      profile.config.password,
-      profile.config.database,
-    );
-    activeConnections.value.set(connectionName, tables);
-  } catch (error) {
-    $q.notify({ type: "negative", message: "Failed to refresh tables" });
-  } finally {
-    loadingTables.value = false;
-  }
-}
-
-watch(
-  () => appContext.currentProject,
-  () => {
-    activeConnections.value.clear();
-    appContext.setActiveConnection(null);
-    loadConfigurations();
-  },
-);
-
-onBeforeMount(loadConfigurations);
 </script>
 
 <style lang="scss" scoped>
 .min-width-auto {
-  min-width: unset !important;
+
 }
 
 .bg-primary-opacity {

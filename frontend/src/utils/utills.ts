@@ -16,6 +16,5 @@ export function mapLabel(category: string, data: any): string {
 
 
 
-function validateFiles(value:number) {
-  
-}
+
+

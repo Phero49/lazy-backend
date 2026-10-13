@@ -34,20 +34,20 @@ export function useEndPointContext(route?: Routes) {
 
   const addTable = (table: string,index:number) => {
    const opt = getIndPointOperation(index)
-   if (opt == null) {
+   if (opt?.databaseBlock == null) {
     return
    }
-  if (opt.query.tables == undefined) {
-    opt.query.tables = [];
+  if (opt.databaseBlock. query.tables == undefined) {
+   opt.databaseBlock.query.tables = [];
   }
-  opt.query.tables.push({
+ opt.databaseBlock.query.tables.push({
     table: table,
   });
 
-  const length = opt.query.tables.length;
+  const length =opt.databaseBlock.query.tables.length;
   if (length > 1) {
-    const currentEntry = opt.query.tables[length - 1];
-    const previousEntry = opt.query.tables[length - 2];
+    const currentEntry =opt.databaseBlock.query.tables[length - 1];
+    const previousEntry =opt.databaseBlock.query.tables[length - 2];
 
     if (currentEntry.join == undefined) {
       currentEntry.join = {
@@ -63,8 +63,7 @@ const getPayload = ()=>{
 }
 
 const getTableJoin = ({optIndex,tableIndex}:{optIndex:number,tableIndex:number})=>{
-    console.log( 'operations', route?.data?.operations[optIndex].query.tables)
-  return route?.data?.operations[optIndex].query.tables[tableIndex].join
+  return route?.data?.operations[optIndex].databaseBlock?.query.tables[tableIndex].join
 }
   
   return {

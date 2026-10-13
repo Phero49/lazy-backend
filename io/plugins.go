@@ -63,7 +63,7 @@ type DatabaseAttribute struct {
 	Description string           `json:"description"`
 	Type        string           `json:"type"` // "property" or "function"
 	Params      []AttributeParam `json:"params,omitempty"`
-}
+} 
  
 type DatabaseAttributes []DatabaseAttribute
 

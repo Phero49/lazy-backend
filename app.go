@@ -207,4 +207,5 @@ func (a *App) StartProjectDependencies(projectName string) error {
 // Typically called from onShutdown, but exposed here for manual control.
 func (a *App) StopAllPlugins() {
 	devserver.StopAllPlugins()
-}
+} 
+  

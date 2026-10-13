@@ -22,18 +22,16 @@
         <q-space />
 
         <!-- Minimal Search -->
-        <q-input
+        <q-select
           dark
           dense
           standout
           v-model="search"
-          placeholder="Search components..."
+          :label="store.currentProject || 'no project selected'"
           class="search-input gt-sm"
         >
-          <template v-slot:prepend>
-            <q-icon name="bi-search" size="14px" />
-          </template>
-        </q-input>
+        
+        </q-select>
 
         <q-space />
 
@@ -73,14 +71,14 @@
       side="left"
       flat
       v-model="store.isExplorerOpen"
-      :width="$q.screen.width * 0.25"
+      :width="$q.screen.width * 0.3"
       :breakpoint="500"
       content-class="bg-grey-3"
     >
       <MainNav />
     </q-drawer>
     <q-page-container>
-      <q-page class="">
+      <q-page >
         <div
           style="z-index: 1000; margin-left: 5px"
           class="fixed q-mb-lg bg-dark-soft border-bottom"
@@ -124,8 +122,13 @@
         <div style="padding-top: 35px">
           <!-- Workspace Tabs A rea (MAKE THIS THE DRAG HANDLE) -->
 
-          <!-- Quasar Scroll Area (STRICTLY NO DRAG) -->
-          <router-view />
+    <q-page>
+      <keep-alive>
+         <router-view :key="$route.fullPath" />
+      </keep-alive>
+               
+
+    </q-page>
         </div>
       </q-page>
     </q-page-container>

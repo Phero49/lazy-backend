@@ -1,13 +1,13 @@
 <template>
   <div style="width: 100%" class="q-pa-md column full-height">
     <div class="row items-center justify-between q-mb-md">
-      <div class="text-overline text-grey-7">Projects</div>
+      <div class="text-h5 text-bold text-grey-5"> Projects</div>
       <q-btn
-        flat
-        round
-        dense
+        unelevated
+        
+         label="new"
         icon="bi-plus-lg"
-        size="xs"
+
         color="primary"
         @click="addNewProject = true"
       >
@@ -15,6 +15,7 @@
       </q-btn>
     </div>
 
+    <q-separator spaced />
     <!-- Skeleton Loader -->
     <template v-if="projects === undefined">
       <q-list dense dark class="q-gutter-y-sm">
@@ -51,7 +52,7 @@
           clickable
           v-for="project in projects"
           :key="project.name"
-          class="project-item"
+          class="project-item text-subtitle1"
           :active="store.currentProject === project.name"
           active-class="active-project"
           @click="selectProject(project)"
@@ -63,15 +64,20 @@
                   ? 'bi-folder-fill'
                   : 'bi-folder'
               "
-              size="14px"
+              size="15px"
               :color="
                 store.currentProject === project.name ? 'primary' : 'grey-7'
               "
             />
           </q-item-section>
-          <q-item-section class="text-caption">{{
+          <q-item-section>
+          <q-item-label class=" text-subtitle1">
+            {{
             project.name
-          }}</q-item-section>
+          }}
+          </q-item-label>
+          
+        </q-item-section>
 
           <q-item-section side v-if="store.currentProject === project.name">
             <div class="active-dot" />
@@ -84,7 +90,7 @@
               flat
               round
               dense
-              @click="deleteProject(project)"
+              @click.stop.prevent="deleteProject(project)"
             >
               <q-tooltip>Delete Project</q-tooltip></q-btn
             >
@@ -139,6 +145,7 @@
       </q-card>
     </q-dialog>
   </div>
+  
 </template>
 
 <script setup lang="ts">
@@ -151,6 +158,7 @@ import {
 } from "#/wailsjs/go/main/App";
 import { useAppContextStore } from "../../store/appContext";
 import { useQuasar } from "quasar";
+import { useDatabaseSchema } from "#/composables/databaseSchema";
 
 const $q = useQuasar();
 const store = useAppContextStore();
@@ -214,6 +222,7 @@ const handleCreateProject = async () => {
 };
 
 const selectProject = (project: { name: string; path: string }) => {
+  store.$reset()
   store.setCurrentProject(project.name);
   $q.notify({
     message: `Switched to project: ${project.name}`,
@@ -224,6 +233,14 @@ const selectProject = (project: { name: string; path: string }) => {
     timeout: 1500,
   });
   StartProjectDependencies(project.name)
+  setTimeout(() => {
+      const db  =  useDatabaseSchema()
+  db.connectDefault()
+ 
+  }, 2000);
+
+  
+
 };
 
 async function deleteProject(project: { name: string; path: string }) {

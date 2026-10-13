@@ -47,6 +47,8 @@
           :delete-end-pont="deleteEndPont"
           :add-route="addRoute"
           :key="i"
+           :full-path="[endpoint.prefix]"
+           :current-path="endpoint.prefix"
           :endpoint="endpoint"
           :level="[i]"
           :i="i"
@@ -59,7 +61,13 @@
 <script setup lang="ts">
 import { biPlusCircle, biSave2Fill } from "@quasar/extras/bootstrap-icons";
 import { computed, onBeforeMount, ref, watch, watchEffect } from "vue";
-import { EndPointList, useAppContextStore } from "../../store/appContext";
+import {
+  EndPointList,
+  ensureNestedEndpoint,
+  findNestedEndpoint,
+  normalizeEndpointSegments,
+  useAppContextStore,
+} from "../../store/appContext";
 import { useQuasar } from "quasar";
 import EndPointListItem from "../../components/endPointListItem.vue";
 const prefix = ref("");
@@ -71,10 +79,24 @@ const method = ref("GET");
 const $q = useQuasar();
 
 const savePrefix = (index?: number) => {
+  const segments = normalizeEndpointSegments(prefix.value);
+  if (!segments.length) {
+    $q.notify({
+      type: "negative",
+      message: "prefix cannot be empty",
+      icon: "error",
+      position: "top-left",
+    });
+    return;
+  }
+
   if (index !== undefined) {
-    const alreadyExist = appContext.apiSchema[index].children.find(
-      (v) => (v as EndPointList).prefix == prefix.value,
-    );
+    const parent = appContext.apiSchema[index];
+    if (!parent) {
+      return;
+    }
+
+    const alreadyExist = findNestedEndpoint(parent, segments);
     if (alreadyExist) {
       $q.notify({
         type: "negative",
@@ -85,16 +107,17 @@ const savePrefix = (index?: number) => {
       return;
     }
 
-    appContext.apiSchema[index].children.push({
-      prefix: prefix.value,
-      children: [],
-    });
+    ensureNestedEndpoint(parent, segments);
     addSubPrefix.value = false;
   } else {
-    const alreadyExist = appContext.apiSchema.find(
-      (v) => (v as EndPointList).prefix == prefix.value,
+    const root = appContext.apiSchema;
+    const alreadyExist = root.find(
+      (v) =>
+        (v as EndPointList).prefix.trim().toLowerCase() ==
+        segments[0].trim().toLowerCase(),
     );
-    if (alreadyExist) {
+
+    if (alreadyExist && segments.length === 1) {
       $q.notify({
         type: "negative",
         message: "prefix already exist",
@@ -103,10 +126,38 @@ const savePrefix = (index?: number) => {
       });
       return;
     }
-    appContext.apiSchema.push({
-      prefix: prefix.value,
-      children: [],
-    });
+
+    if (segments.length === 1) {
+      root.push({
+        prefix: segments[0],
+        children: [],
+      });
+    } else {
+      const rootPrefix = root.find(
+        (v) =>
+          (v as EndPointList).prefix.trim().toLowerCase() ==
+          segments[0].trim().toLowerCase(),
+      ) as EndPointList | undefined;
+
+      if (!rootPrefix) {
+        const newRoot: EndPointList = {
+          prefix: segments[0],
+          children: [],
+        };
+        root.push(newRoot);
+        ensureNestedEndpoint(newRoot, segments.slice(1));
+      } else if (!findNestedEndpoint(rootPrefix, segments.slice(1))) {
+        ensureNestedEndpoint(rootPrefix, segments.slice(1));
+      } else {
+        $q.notify({
+          type: "negative",
+          message: "prefix already exist",
+          icon: "error",
+          position: "top-left",
+        });
+        return;
+      }
+    }
     addNewPrefix.value = false;
   }
 
@@ -123,7 +174,7 @@ function deleteEndPont(index: number, index2?: number) {
 function addRoute(index: number, index2?: number) {
   if (index2 === undefined) {
     appContext.apiSchema[index].children = [
-      { path: "", method: "GET" },
+      { path: "", method: "GET",name:'' },
       ...appContext.apiSchema[index].children,
     ];
   } else {
