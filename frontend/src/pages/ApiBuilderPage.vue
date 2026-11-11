@@ -31,9 +31,9 @@
           <div v-for="(item, index) in value.data" :key="index">
             <q-menu context-menu class="bg-grey-10">
               <operation-block-add-content
-                :top-level="false"
+                :top-level="!scope.scope.enableCondition"
                 :hide-fab="true"
-                :blocks="[]"
+                :blocks="endPointData.data?.operations || []"
                 :block-data="value.data"
               >
                 <template #default="actions">
@@ -59,6 +59,8 @@
                       <q-item
                         @click="
                           menuItem.action(
+                            index,
+                            i,
                             actions.actions[
                               menuItem.key as keyof typeof actions.actions
                             ],
@@ -161,7 +163,7 @@ interface ContextMenuItem {
   label: string;
   icon: string;
   key: "addDbOp" | "addDependency" | "addApiResponse" | string;
-  action: (caller: Caller, operationIndex?: number) => void;
+  action: (operationIndex: number, blockIndex: number, caller?: Caller) => void;
 }
 
 const contextMenu: ContextMenuItem[] = [
@@ -169,31 +171,35 @@ const contextMenu: ContextMenuItem[] = [
     label: "delete block",
     icon: "delete",
     key: "",
-    action: (caller) => caller(),
+    action: (_, blockIndex) => {
+      endPoint.deleteBlockByIndex(blockIndex);
+    },
   },
   {
     key: "",
     icon: "delete",
     label: "delete operation",
-    action: (caller, index) => caller(),
+    action: (operationIndex, blockIndex) => {
+      endPoint.deleteOperationByIndex(blockIndex, operationIndex);
+    },
   },
   {
     key: "addDependency",
     icon: "cable",
     label: "Add dependency",
-    action: (caller, index) => caller(),
+    action: (operationIndex, blockIndex, caller) => caller?.(operationIndex),
   },
   {
     icon: "bi-table",
     key: "addDbOp",
     label: "Add database block",
-    action: (caller, index) => caller(),
+    action: (operationIndex, blockIndex, caller) => caller?.(operationIndex),
   },
   {
     icon: "http",
     key: "addApiResponse",
     label: "Add http response",
-    action: (caller) => caller(),
+    action: (operationIndex, blockIndex, caller) => caller?.(operationIndex),
   },
 ];
 </script>
