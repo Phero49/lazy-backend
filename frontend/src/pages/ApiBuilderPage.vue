@@ -28,7 +28,57 @@
         :index="i"
       >
         <template #main="scope">
-          <div  v-for="(item, index) in value.data" :key="index">
+          <div v-for="(item, index) in value.data" :key="index">
+            <q-menu context-menu class="bg-grey-10">
+              <operation-block-add-content
+                :top-level="false"
+                :hide-fab="true"
+                :blocks="[]"
+                :block-data="value.data"
+              >
+                <template #default="actions">
+                  <q-list separator style="min-width: 250px">
+                    <template
+                      v-for="(menuItem, itemIndex) in contextMenu"
+                      :key="itemIndex"
+                    >
+                      <q-item
+                        clickable
+                        v-if="
+                          menuItem.label == 'delete block' &&
+                          value.condition?.disableCondition === false
+                        "
+                      >
+                        <q-item-section avatar>
+                          <q-icon :name="menuItem.icon" color="grey" />
+                        </q-item-section>
+                        <q-item-section class="text-capitalize text-grey">{{
+                          menuItem.label
+                        }}</q-item-section>
+                      </q-item>
+                      <q-item
+                        @click="
+                          menuItem.action(
+                            actions.actions[
+                              menuItem.key as keyof typeof actions.actions
+                            ],
+                          )
+                        "
+                        clickable
+                        v-if="itemIndex > 0"
+                      >
+                        <q-item-section avatar>
+                          <q-icon :name="menuItem.icon" color="grey" />
+                        </q-item-section>
+                        <q-item-section class="text-capitalize text-grey">{{
+                          menuItem.label
+                        }}</q-item-section>
+                      </q-item>
+                    </template>
+                  </q-list>
+                </template>
+              </operation-block-add-content>
+            </q-menu>
             <EndPointContentWrapper
               :scope="scope"
               :item="item"
@@ -61,30 +111,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, provide, ref, toRaw, watch } from "vue";
-import {
-  httpMethod,
-  type HTTPMethods,
-  type OperationBlock as OperationBlockType,
-  Payload,
-  Routes,
-  useAppContextStore,
-} from "../store/appContext";
-import TableCellEditor from "../components/TableCellEditor.vue";
-import { biChevronDown, biDash, biPlus } from "@quasar/extras/bootstrap-icons";
-import {
-  symRoundedStepInto,
-  symRoundedArrowSplit,
-} from "@quasar/extras/material-symbols-rounded";
-import DatabaseOperationsUi from "../components/DatabaseOperationsUi.vue";
+import { computed } from "vue";
+import { Routes, useAppContextStore } from "../store/appContext";
 import { useRoute } from "vue-router";
-import { date } from "quasar";
 import EndpointPayload from "../components/EndpointPayload.vue";
 import { useEndPointContext } from "../composable/EndpointBulder";
 import OperationBlock from "~/components/operationBlock.vue";
 import OperationBlockAddContent from "~/components/operationBlockAddContent.vue";
-import OperationHttpResponse from "~/components/operationHttpResponse.vue";
-import OperationDependencyUi from "~/components/operationDependencyUi.vue";
 import { useProvide } from "~/composable/useProviderInjector";
 import EndPointContentWrapper from "~/components/EndPointContentWrapper.vue";
 const appContext = useAppContextStore();
@@ -92,20 +125,6 @@ const route = useRoute();
 const level = computed(
   () => (appContext.tabState[route.path].levels as number[]) ?? [],
 );
-
-const vSetMissingCondition = {
-  mounted(el: HTMLElement, binding: any) {
-    if (binding.value === undefined) {
-      return;
-    }
-    const v = binding.value as OperationBlockType;
-    if (v.condition === undefined || v.condition === null) {
-      v.condition = { data: [], type: "if", disableCondition: true };
-    } else if (v.condition.disableCondition === undefined) {
-      v.condition.disableCondition = true;
-    }
-  },
-};
 
 const endPointData = computed(() => {
   if (level.value.length == 0) {
@@ -127,18 +146,54 @@ const endPointData = computed(() => {
     return route;
   }
 });
-const activeCondition = ref<string | null>(null);
 
 //TODO: remove the prop architecture
 const endPoint = useEndPointContext(endPointData.value);
 
 useProvide("endPointContext", endPoint);
 
-const testOperation = () => {
-  null;
-};
-const deleteOperation = () => {
-  null;
-};
+type Caller = (
+  index?: number | undefined,
+  direction?: "after" | "before",
+) => void;
 
+interface ContextMenuItem {
+  label: string;
+  icon: string;
+  key: "addDbOp" | "addDependency" | "addApiResponse" | string;
+  action: (caller: Caller, operationIndex?: number) => void;
+}
+
+const contextMenu: ContextMenuItem[] = [
+  {
+    label: "delete block",
+    icon: "delete",
+    key: "",
+    action: (caller) => caller(),
+  },
+  {
+    key: "",
+    icon: "delete",
+    label: "delete operation",
+    action: (caller, index) => caller(),
+  },
+  {
+    key: "addDependency",
+    icon: "cable",
+    label: "Add dependency",
+    action: (caller, index) => caller(),
+  },
+  {
+    icon: "bi-table",
+    key: "addDbOp",
+    label: "Add database block",
+    action: (caller, index) => caller(),
+  },
+  {
+    icon: "http",
+    key: "addApiResponse",
+    label: "Add http response",
+    action: (caller) => caller(),
+  },
+];
 </script>

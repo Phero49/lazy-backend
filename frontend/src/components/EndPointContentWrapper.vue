@@ -1,16 +1,6 @@
 <template>
   <div :class="tintClass(item.type)" >
-    <q-menu context-menu>
-        <q-list style="min-width: 100px">
-            <q-item clickable v-close-popup>
-                <q-item-section>delete operation</q-item-section>
-            </q-item>
-            <q-separator />
-            <q-item clickable v-close-popup>
-                <q-item-section>delete block</q-item-section>
-            </q-item>
-        </q-list>
-    </q-menu>
+  
     <DatabaseOperationsUi
       v-if="item.type == 'database'"
       :index="operationIndex"
@@ -44,6 +34,7 @@ import DatabaseOperationsUi from "./DatabaseOperationsUi.vue";
 import OperationHttpResponse from "./operationHttpResponse.vue";
 import OperationDependencyUi from "./operationDependencyUi.vue";
 import { useInject, useProvide } from "~/composable/useProviderInjector";
+import OperationBlockAddContent from "./operationBlockAddContent.vue";
 
 const props = defineProps<{
   scope: { scope: BlockScope };
@@ -67,9 +58,7 @@ function tintClass(type: string): string {
   return STEP_TINT[type] ?? "tint-data";
 }
 
-const contextMenu = [{
-    label:'add'
-}]
+
 </script>
 
 <style>
