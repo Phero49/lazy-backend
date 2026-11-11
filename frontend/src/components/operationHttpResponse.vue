@@ -1,23 +1,49 @@
 <template>
-    <div> 
-      <div class="text-subtitle2 text-capitalize">
-          Respond with: <q-icon size="sm"  name="bi-reply" />
-      </div>
-      <q-separator spaced   />
+  <block-unit-wrapper :scope="scope" :hide-toggle-btn="blockIndex > 0">
+<template #header-extend-left>
+<div class=" items-center">
+            <q-icon name="http" size="sm" class="q-mr-sm" color="grey-6" />
+
+respond with </div>
+</template>
+<template #header-extend-right>
+  <div>
+      <span class="text-bold text-cyan-9 q-mx-ms">
+      code : <span class="text-bold text-cyan-9">{{httpResponse.code}}</span>
+
+  </span> 
+  </div>
+  <div class="q-ml-sm q-mr-md">
+    <span>data type </span>:<span
+      class="q-ml-xs text-cyan-9 text-bold"
+    >
+      {{ dataType }}</span
+    >
+
+  </div>
+
+  </template>
+  <div> 
+   
+  
 
         <div class="row">
         <div class="col-4">
-          <q-select
-            v-model="statusCode"
-            :options="getStatuesCodeList"
+          <q-select use-input
+            v-model="httpResponse.code"
+            :options="filteredStatusCodes"
             label="status code"
             filled
-            dense
+            @filter="filterStatusCodes"
+            dense 
+            :prefix="`${httpResponse.statusMessage} :`"
           >
             <template #option="scope">
-              <q-item @click="scope.toggleOption(scope.label)">
+              <q-item @click="()=>{
+                httpResponse.statusMessage = scope.opt.label
+                scope.toggleOption(scope.opt.value)}">
                 <q-item-section>
-                  {{ scope.opt.label }} ==> {{ scope.opt.value }}
+                  {{ scope.opt.label }} : {{ scope.opt.value }}
                 </q-item-section>
               </q-item>
             </template>
@@ -58,18 +84,50 @@
           </div>
           
         </div>
-      </div></div>
+      </div>
+    </div>    </block-unit-wrapper>
+    
+  
      
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { dataTypes, getStatuesCodeList } from '~/utils/apiSchema';
+import { ApiResponse, BlockScope } from '..';
+import BlockUnitWrapper from './BlockUnitWrapper.vue';
 
+const props =  defineProps<{
+  blockIndex:number,
+  httpResponse:ApiResponse,
+  scope:BlockScope}>()
 const statusCode = ref('')
 const dataType = ref<string>('null')
 const returnStaticType =  ref(false)
 const message  = ref("null")
+
+// Filtered status codes
+const filteredStatusCodes = ref([...getStatuesCodeList])
+
+function filterStatusCodes(val: string, update: (fn: () => void) => void) {
+  update(() => {
+    if (val === '') {
+      filteredStatusCodes.value = [...getStatuesCodeList]
+    } else {
+      const needle = val.toLowerCase()
+      filteredStatusCodes.value = getStatuesCodeList.filter(
+        (opt: any) =>
+          String(opt.label).toLowerCase().includes(needle) ||
+          String(opt.value).toLowerCase().includes(needle)
+      )
+    }
+  })
+}
+
+onMounted(() => {
+  
+})
+
 </script>
 
 <style>

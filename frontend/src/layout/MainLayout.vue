@@ -122,13 +122,10 @@
         <div style="padding-top: 35px">
           <!-- Workspace Tabs A rea (MAKE THIS THE DRAG HANDLE) -->
 
-    <q-page>
       <keep-alive>
          <router-view :key="$route.fullPath" />
       </keep-alive>
-               
 
-    </q-page>
         </div>
       </q-page>
     </q-page-container>

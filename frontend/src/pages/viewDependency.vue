@@ -1,5 +1,6 @@
 <template>
   <q-page class="doc-page">
+    {{ appContext.tabState[$route.path] }}
     <div v-if="loading" class="flex flex-center q-pa-xl">
       <q-spinner size="40px" color="primary" />
     </div>
@@ -10,24 +11,29 @@
 
     <div v-else class="q-pa-md" style="max-width: 900px; margin: 0 auto;">
       <!-- Header -->
-      <div class="q-mb-lg">
-        <div class="row items-center q-gutter-sm">
-          <div class="text-h4">{{ dependencyName }}</div>
-          <q-badge color="primary" outline>{{ manifest['lang-extension'] }}</q-badge>
-          <q-badge color="grey-7" outline>v{{ manifest.version }}</q-badge>
-          <q-badge v-if="installed" color="positive" outline>Installed</q-badge>
-        </div>
-        <div class="text-subtitle1 text-grey-8 q-mt-xs">{{ manifest.description }}</div>
-        <div class="text-caption text-grey q-mt-xs">by {{ manifest.publisher }}</div>
+       <div class="row">
+<div class="col-8">
+   <div class="text-h5 text-bold">{{ dependencyName }}  <span class="text-body2 text-bold text-white">
+          
+          </span></div>
+                    <div class="text-subtitle2" >Language extension: {{ manifest["lang-extension"] }} </div>
 
-        <!-- Action buttons -->
-        <div class="row items-center q-gutter-sm q-mt-md">
-          <q-btn
+</div>
+<div class="col-3 text-weight-medium offset-1">
+ <div>
+  version: {{ manifest.version }}
+ </div>
+ <div>
+  publisher: {{ manifest.publisher }}
+ </div>
+ <div>
+      <div class="q-mt-md">
+          <q-btn class="full-width"
             v-if="!installed"
-            color="primary"
-            icon="download"
-            label="Install"
-            :loading="installing"
+            color="primary" no-caps
+            icon="add"
+            label="Add To Project"
+            :loading="installing" 
             @click="handleInstall"
           />
           <q-btn
@@ -53,14 +59,32 @@
             />
           </template>
         </div>
+ </div>
+</div>
+</div>
+<div class="q-my-md">
+  {{ manifest.description }}
+</div>
 
-        <div v-if="manifest.install?.length" class="q-mt-md">
+<div class="q-mb-md " >
+  <div class="text-subtitle1 text-bold text-capitalize"> 
+    dependency installs
+  </div>
+
+      <div v-if="manifest.install?.length && manifest.install?.length > 0" class="q-mt-md q-mt-sm">
           <div v-for="(cmd, i) in manifest.install" :key="i" class="install-cmd row items-center justify-between q-pa-sm q-mb-xs">
             <code>{{ cmd }}</code>
             <q-btn flat dense round icon="content_copy" size="sm" @click="copy(cmd)" />
           </div>
         </div>
-      </div>
+        <div>
+          <code>This dependencies  doesn't install extra dependencies </code>
+        </div>
+
+</div>
+
+
+    
 
       <!-- Search -->
       <q-input
@@ -176,22 +200,22 @@ const adding = ref(false)
 const removing = ref(false)
 
 async function refreshDependencyState() {
-  const [manifestData, installedDependencies, projectDependencies] = await Promise.all([
-    GetDependencyManifest(dependencyName),
-    GetAllInstalledDependencies(),
-    appContext.currentProject
-      ? GetProjectUsedDependencies(appContext.currentProject)
-      : Promise.resolve([]),
-  ])
+  const location =  route.query.location as string
+  const manifestData =   await GetDependencyManifest(location)
+
+
+  console.log(manifestData,'manifest--kk')
+  
 
   manifest.value = manifestData
-  installed.value = installedDependencies.some((dependency) => dependency.name === dependencyName)
-  usedInProject.value = projectDependencies.some((dependency) => dependency.name === dependencyName)
+ // installed.value = installedDependencies.some((dependency) => dependency.name === dependencyName)
 }
 
 onMounted(async () => {
   try {
     await refreshDependencyState()
+  } catch(e){
+    console.error(e)
   } finally {
     loading.value = false
   }
@@ -200,16 +224,11 @@ onMounted(async () => {
 async function handleInstall() {
   installing.value = true
   try {
-    const dependency = {
-      name: dependencyName,
-      description: manifest.value?.description ?? "",
-      exportsCount: manifest.value?.modules?.reduce((count, module) => count + (module.exports?.length ?? 0), 0) ?? 0,
-      version: Number(manifest.value?.version ?? 0),
-      publisher: manifest.value?.publisher ?? "",
-      location: "",
-    } as io.Dependence
-
-    await InstallDependencyModule(dependency)
+    const currentDependency = appContext.tabState[route.path]
+    if (currentDependency ==  undefined) {
+      $q.notify({message:'failed to add dependency to project'})
+    return }
+    AddProjectDependency(appContext.currentProject!,currentDependency)
     installed.value = true
     $q.notify({ message: `${dependencyName} installed`, color: "positive" })
   } catch (err) {
@@ -308,10 +327,7 @@ const matchCount = computed(() =>
 </script>
 
 <style scoped>
-.code-font {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 0.9em;
-}
+
 .install-cmd {
   background: #1e1e1e;
   color: #d4d4d4;

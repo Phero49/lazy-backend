@@ -1,15 +1,24 @@
 <template>
+  
+<div  style="min-width: 350px" class="q-py-sm">
+  <!--selector to pick data source-->
   <q-select
-    style="min-width: 300px"
+   
     class="q-mb-sm"
     v-if="expressionFragment.source"
     dense
-    @update:model-value="loadOptions"
+    filled
+    @update:model-value="()=>{
+ 
+    expressionFragment.value = 'value'
+  
+    }"
     v-model="expressionFragment.source"
-    :options="['static', 'dependencies', 'payload', 'operationBlock']"
+    :options="['static', 'payload', 'operationBlock']"
     label="data source"
   />
   <!--handles static values-->
+  <!--it includes data type selection and type-->
   <div class="row" v-if="expressionFragment.source == 'static'">
     <div class="col-4">
       <q-select
@@ -24,25 +33,17 @@
             }
           }
         "
-        :options="[
-          'null',
-          'string',
-          'int',
-          'list',
-          'bool',
-          'list (string)',
-          'list (int)',
-        ]"
+        :options="staticValueDataTypeOptions"
         label="type"
         filled
       />
     </div>
-    <div class="col-auto" style="cursor: pointer">
+    <div class="col-auto q-pl-sm" style="cursor: pointer">
       <q-input
         square
         :readonly="expressionFragment.valueType == 'null'"
         @keydown="onEnter"
-        v-model="search"
+        v-model="search" class="full-width"
         dense
         filled
         autofocus
@@ -55,45 +56,51 @@
       />
     </div>
   </div>
-  <div v-else class="q-pb-md">
+  <div v-else-if="expressionFragment.source == 'payload'" class="q-pb-md">
+    <!--select data source -->
     <q-select
-      v-model="search"
+      v-model="expressionFragment.value"
       dense
-      :options="availableDataForSelectedOp"
-      :label="`filter from ${expressionFragment.source}`"
+      :options="endPointInstance?.getPayload() || []"
+      label="filter from payload "
       filled
-    />
-  </div>
-  <q-list
-    style="min-width: 220px; max-height: 280px"
-    v-if="expressionFragment?.source != 'static'"
   >
-  <template v-if="filteredAvailableDataForSelectedOp.length > 0">
-  <q-item
-      v-for="(item, i) in filteredAvailableDataForSelectedOp"
-      :key="i"
-      clickable class="text-subtitle2"
-      v-close-popup @click="()=>{
-        expressionFragment.value = item.label
-      }"
-    >
-      <q-item-section>{{ item.label }}</q-item-section>
-      <q-item-section side>
-        <q-item-label caption>{{ item.dataType }}</q-item-label>
-      </q-item-section>
-    </q-item>
-  </template>
-  <template v-else>  <q-item >
-      <q-item-section class="text-grey">Nothing available</q-item-section>
-    </q-item></template>
+<template #option="scope">
+<payload-list-item :payload="scope.opt" @select="()=>{
+  const s = scope.opt as Payload
+  expressionFragment.value =  `payload.${s.dataSource}.${s.fieldName}`
   
-  
-  </q-list>
+
+}" />
+</template>
+</q-select>
+  </div>
+  <div v-else-if="expressionFragment.source == 'operationBlock'" >
+    <q-select dense v-model="expressionFragment.value" :options="endPointInstance?.getEndPointOperationB4Position(currentIndex)" label="select process" filled >
+      <template #option="scope" >
+<q-item>
+  {{ scope }}
+</q-item>
+      </template>
+      <template #no-option>
+        <div class="q-pa-md text-center text-grey text-subtitle1">
+        no previous blocks found 
+        </div>
+      </template>
+    </q-select>
+  </div>
+
+
+</div>
 </template>
 
 <script lang="ts" setup>
 import { inject, onMounted, ref } from "vue";
-import { ConditionExpressionPart, Routes } from "~/store/appContext";
+import { ConditionExpressionPart, Payload, Routes } from "~/store/appContext";
+import PayloadListItem from "./payloadListItem.vue";
+import { EndPointInstance } from "~/composable/EndpointBulder";
+import { useInject, useProvide } from "~/composable/useProviderInjector.js";
+import { DependencyMethods } from "~/index.js";
 
 const props = defineProps<{ expressionFragment: ConditionExpressionPart }>();
 const search = ref(
@@ -104,36 +111,32 @@ const search = ref(
 type DataOptions = { label: string; dataType: string };
 const availableDataForSelectedOp = ref<DataOptions[]>([]);
 const filteredAvailableDataForSelectedOp = ref<DataOptions[]>([]);
-const getCurrentRoute = inject<() => Routes>("getCurrentRoute");
+const getCurrentRoute = useInject("getCurrentRoute");
+const endPointInstance = useInject("endPointContext");
+const getCurrentIndex  =  useInject('getCurrentBlockIndex')
+const currentIndex = getCurrentIndex?.() || -1
+const staticValueDataTypeOptions = [
+          'null',
+          'string',
+          'int',
+          'list',
+          'bool',
+          'list (string)',
+          'list (int)',
+        ]
 const setOperand = () => {};
 const onEnter = (e: KeyboardEvent) => {
   if (e.key === "Enter") {
     props.expressionFragment.value = search.value;
+    search.value = ''
   }
 };
+const methodList = ref<DependencyMethods[]>([])
+const loadDependencies  = async ()=>{
+    methodList.value =  await endPointInstance?.getDependencyAllExports() || []
 
-const loadPayloadValues = () => {
-  const route = getCurrentRoute?.();
-  if (route) {
-    availableDataForSelectedOp.value =
-      route.data?.payload.map((v) => {
-        return {
-          label: v.dataSource + "." + v.fieldName,
-          dataType: v.dataType,
-        };
-      }) || [];
-      filteredAvailableDataForSelectedOp.value =  availableDataForSelectedOp.value
-  }
-};
-const loadOptions = ()=>{
-    if (props.expressionFragment.source == 'static') {
-        return
-    }
-    loadPayloadValues()
-}
-onMounted(() => {
-   loadOptions()
-})
+ }
+
 </script>
 
 <style></style>

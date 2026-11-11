@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	devserver "lazy-backend/dev-server"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,7 +15,7 @@ import (
 var assets embed.FS
 
 func main() {
-	//os.Setenv("GTK_OVERLAY_SCROLLING", "0")
+	os.Setenv("GTK_OVERLAY_SCROLLING", "0")
 	// Create an instance of the app structure
 	app := NewApp()
 

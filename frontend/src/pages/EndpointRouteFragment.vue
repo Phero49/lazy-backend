@@ -113,8 +113,9 @@
                 `/api/${value.path}`,
                 `${value.method} - ${value.path}`,
                 'bi-code-slash',
+                undefined,
                 {
-                  level: [...level, childIndex].join(','),
+                  levels: [...level, childIndex],
                 },
               )
             "
@@ -128,7 +129,7 @@
                   :label="value.method"
                 />
 
-                {{ value.path }}
+                {{ value.name }}
               </div>
             </div>
           </div>

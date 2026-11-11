@@ -88,7 +88,7 @@ function partLabel(part: ConditionPart): string {
   if (part.source === "operationBlock") {
     return String(part.value) || `operation #${(part.blockIndex ?? 0) + 1}`;
   }
-  if (part.source === "module") return String(part.value) || "module";
+  if (part.source === "dependencies") return String(part.value) || "dependency";
   return String(part.value);
 }
 

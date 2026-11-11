@@ -29,20 +29,20 @@
     </div>
     <q-separator />
     <q-tabs dense v-model="tab" no-caps>
-      <q-tab name="market-place" icon="shop" label="market place" />
 
       <q-tab name="installed" icon="download" label="installed" />
-    </q-tabs>
+         <q-tab name="market-place" icon="bi-card-checklist" label="active" />
+ </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="market-place">
-        <div class="text-h6">Mails</div>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+     
+     not available
       </q-tab-panel>
       <q-tab-panel name="installed">
         <q-list>
           <q-item
             clickable
-            @click="openDependency(item.name)"
+            @click="openDependency(item)"
             v-ripple
             v-for="(item, index) in appContext.installedDependencies"
             :key="index"
@@ -51,7 +51,6 @@
               <q-item-label>
                 {{ item.name }} - v{{ item.version }}
               </q-item-label>
-
               <q-item-label caption :lines="1">
                 {{ item.description }}
               </q-item-label>
@@ -102,10 +101,13 @@
 import { onMounted, ref } from "vue";
 import {
   GetAllInstalledDependencies,
+  GetProjectUsedDependencies,
   LoadLocalDependencies,
 } from "#/wailsjs/go/main/App";
 import { useQuasar } from "quasar";
 import { useAppContextStore } from "~/store/appContext";
+import { isTerminatorless } from "@babel/types";
+import { io } from "#/wailsjs/go/models";
 const search = ref("");
 const loadingError = ref(false);
 const errorMsg = ref<string | unknown>("");
@@ -114,8 +116,10 @@ const tab = ref("installed");
 const $q = useQuasar();
 const appContext = useAppContextStore();
 
-function openDependency(name: string) {
-  appContext.createNewTab(`/view-dependency/${name}`, " x module", "bi-layer");
+function openDependency(item:io.Dependence) {
+  appContext.createNewTab(`/view-dependency/${item.name}`,item.name +' module', "bi-layer",{
+    location:item.location
+  },item);
 }
 
 async function loadLocalDependencies() {
@@ -136,6 +140,7 @@ async function loadLocalDependencies() {
 }
 onMounted(() => {
   appContext.getInstalledDependencies();
+ // GetProjectUsedDependencies()
 });
 </script>
 

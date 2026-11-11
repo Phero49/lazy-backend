@@ -38,6 +38,10 @@ export function GetDatabaseList(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['GetDatabaseList'](arg1, arg2, arg3, arg4);
 }
 
+export function GetDependencyExports(arg1) {
+  return window['go']['main']['App']['GetDependencyExports'](arg1);
+}
+
 export function GetDependencyManifest(arg1) {
   return window['go']['main']['App']['GetDependencyManifest'](arg1);
 }

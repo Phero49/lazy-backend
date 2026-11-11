@@ -1,6 +1,27 @@
-import { type EndPointList, type Routes, useAppContextStore } from "../store/appContext";
+import { GetDependencyExports, GetDependencyManifest, GetProjectUsedDependencies } from "#/wailsjs/go/main/App";
+import { DependencyMethods } from "..";
+import { type EndPointList, OperationBlockData, type Routes, useAppContextStore } from "../store/appContext";
 
 const appContext = useAppContextStore()
+
+export async function getDependencyAllExports(){
+  const  exports:DependencyMethods[] = []
+  try {
+    const dependencies = await GetProjectUsedDependencies(
+      appContext.currentProject!,
+    );
+    for (const d of dependencies) {
+      const m = await GetDependencyManifest(d.location);
+      m.modules.forEach((v) => {
+        exports.push({
+          data:v.exports,
+          source:m.location || ''
+        });
+      });
+    }
+  } catch (error) {}
+  return exports
+}
 
 export function useEndPointContext(route?: Routes) {
   function updateLimitPayload(v: boolean) {
@@ -30,11 +51,14 @@ export function useEndPointContext(route?: Routes) {
    return   route.data?.operations || []
   }
 
-  const getIndPointOperation = (index:number)=>route?.data?.operations[index]
+  const getIndPointOperation = (index:number,blockIndex:number)=>route?.data?.operations[index].data[blockIndex]
 
-  const addTable = (table: string,index:number) => {
-   const opt = getIndPointOperation(index)
-   if (opt?.databaseBlock == null) {
+  const addTable = (table: string,index:number ,blockIndex:number) => {
+   const opt = getIndPointOperation(index,blockIndex)
+if (opt?.type != 'database') {
+  return
+}
+   if ( opt?.databaseBlock == null) {
     return
    }
   if (opt.databaseBlock. query.tables == undefined) {
@@ -62,14 +86,55 @@ const getPayload = ()=>{
     return route?.data?.payload 
 }
 
-const getTableJoin = ({optIndex,tableIndex}:{optIndex:number,tableIndex:number})=>{
-  return route?.data?.operations[optIndex].databaseBlock?.query.tables[tableIndex].join
+const getTableJoin = ({optIndex,tableIndex,blockIndex}:{optIndex:number,blockIndex:number,tableIndex:number})=>{
+  const block = route?.data?.operations[optIndex].data[blockIndex]
+  if (block?.type == 'database') {
+    return block.databaseBlock?.query.tables[tableIndex].join
+
+ }
 }
   
+
+function getEndPointOperationB4Position(operationIndex:number) {
+  const index = operationIndex;
+  if (route == undefined || index < 0) {
+    return [];
+  }
+  const transformData = (op: OperationBlockData) => {
+    if (op.type == "database") {
+      return {
+        operationIndex: index,
+        type: "database",
+        name: op.databaseBlock.name,
+      };
+    } else if (op.type == "dependency") {
+      return {
+        type: "dependency",
+        operationIndex: index,
+        name: op.dependenceBlock.name,
+      };
+    }
+  }
+  const currentEndPoint = route.data?.operations[index]
+  const conditionDisabled = currentEndPoint?.condition?.disableCondition
+  if (!conditionDisabled) {
+    const mappedData = route.data?.operations.slice(0, index).filter((v)=>v.condition?.disableCondition !== false).map((op, i) => {
+      return op.data.map(transformData).filter((v) => v != undefined);
+    });
+    return mappedData?.flat() ||[]
+  }
+return currentEndPoint?.data.map(transformData).filter((v)=> v!=undefined) || []
+
+}
+
+
+
   return {
     route,
-    updateLimitPayload,
+    getDependencyAllExports,
     getEndPointOperations,
+    updateLimitPayload,
+    getEndPointOperationB4Position,
     addTable,getIndPointOperation,
     getPayload,
     getTableJoin

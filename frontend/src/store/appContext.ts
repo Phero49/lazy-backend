@@ -136,45 +136,73 @@ export interface DatabaseOperations {
 export interface DependencyBlock {
   /** Dependency name or identifier. */
   name: string;
+  source?: string;
+  
   /** Ordered arguments passed to the dependency. */
-  params: (string | number)[];
+  params: {
+    inputType: "static" | "payload" | "previous-step";
+    name: string;
+    value: {
+      data: string | null;
+      type: string;
+    };
+  }[];
+  /** location were the dependency  is */
+  location: string;
 }
 export interface ConditionExpressionPart {
-  source: 'static' | 'module' | 'payload' | 'operationBlock';
+  source: "static" | "dependencies" | "payload" | "operationBlock";
   blockIndex?: number;
-  value: string | number  | (string | number)[];
-  valueType?: 'null'| 'string'| 'int'|'list'| 'bool'| 'list (string)'| 'list (int)';
+  value: string | number | (string | number)[];
+  dependencyLocation?:string
+  valueType?:
+    | "null"
+    | "string"
+    | "int"
+    | "list"
+    | "bool"
+    | "map"
+    | "any"
+    | "list (string)"
+    | "list (int)";
 }
 
+export type OperationBlockData =
+  | { type: "database"; databaseBlock: DatabaseOperations }
+  | { type: "dependency"; dependenceBlock: DependencyBlock }
+  | { type: "apiResponse"; apiResponse: ApiResponse };
+
 /**
- * A single step in a route operation tree.
+ * a block in the operation tree that can be conditionally executed based on a condition gate
+ * making all data under it require a condition to be executed
  */
 export interface OperationBlock {
+    condition: ConditionGate | null;
+  /**
+   * contains the data for the block, can be a database operation, a dependency call, or an API response
+   * the type of the block is determined by the type of the data
+   * if the type is database, then the block is a database operation
+   * if the type is dependency, then the block is a dependency call
+   * if the type is apiResponse, then the block is an API response
+   *
+   * this allows for a flexible and extensible operation tree that can be used to build complex API routes
+   * with multiple steps and dependencies
+   * if condition is null, then the block is always executed, otherwise it is executed only if the condition is met
+   */
+  data: OperationBlockData[];
+}
 
-  /** Optional condition gate that decides whether this block executes. */
-  condition: {
-    type:string,
-    disableCondition:boolean
-    data: {
+export interface ConditionGate {
+  type: string;
+  disableCondition: boolean;
+  data: ConditionExpression[];
+}
 
-    left:ConditionExpressionPart|null,
-    operator:string,
-    right:ConditionExpressionPart|null
-    joinClause?:'AND'|'OR'
-  }[]} | null
-
-  data:{
-      /** Kind of operation this block represents. */
-  type: "database" | "dependency"|'apiResponse';
-   /** Database operation payload when this block executes a query. */
-  databaseBlock?: DatabaseOperations;
-  /** Dependency invocation payload when this block executes a dependency call. */
-  dependenceBlock?: DependencyBlock;
-
-  apiResponse?:ApiResponse, }[]
-
-
-
+export interface ConditionExpression {
+  left: ConditionExpressionPart | null;
+  operator: string;
+  right: ConditionExpressionPart | null;
+  joinClause?: "AND" | "OR";
 }
 
 /**
@@ -335,6 +363,7 @@ export const useAppContextStore = defineStore("appContext", {
     apiSchema: [] as EndPointList[],
     installedDependencies: [] as io.Dependence[],
     projectDependencies: [] as io.Dependence[],
+    tabState: {} as Record<string, any>,
     activePlugins: {
       api: null as { port: string; plugin: io.PluginManifestSchema } | null,
       database: null as {
@@ -442,6 +471,7 @@ export const useAppContextStore = defineStore("appContext", {
       label: string,
       icon: string,
       query: LocationQuery = {},
+      state?: any,
     ) {
       const exists = this.openedTabs.find((t) => t.path === path);
       if (exists) {
@@ -459,6 +489,9 @@ export const useAppContextStore = defineStore("appContext", {
       this.activeTabId = id;
 
       router.push({ path, force: true, query });
+      if (state) {
+        this.tabState[path] = state;
+      }
 
       //
     },
@@ -476,7 +509,8 @@ export const useAppContextStore = defineStore("appContext", {
     closeTab(tabId: string) {
       const index = this.openedTabs.findIndex((t) => t.id === tabId);
       if (index !== -1) {
-        this.openedTabs.splice(index, 1);
+        const closedTab = this.openedTabs.splice(index, 1);
+        delete this.tabState[closedTab[0].path];
         if (this.activeTabId === tabId) {
           if (this.openedTabs.length > 0) {
             // Select the neighboring tab

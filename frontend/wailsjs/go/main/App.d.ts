@@ -20,6 +20,8 @@ export function GetApiSchema(arg1:string):Promise<Array<any>>;
 
 export function GetDatabaseList(arg1:string,arg2:number,arg3:string,arg4:string):Promise<Array<string>>;
 
+export function GetDependencyExports(arg1:string):Promise<Array<io.Exports>>;
+
 export function GetDependencyManifest(arg1:string):Promise<io.DependencySchema>;
 
 export function GetPlugin(arg1:string):Promise<io.PluginDetail>;

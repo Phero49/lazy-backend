@@ -14,7 +14,10 @@ export function mapLabel(category: string, data: any): string {
   }
 }
 
-
-
+export const defaultCondition = {
+  data: [],
+  type: "if",
+  disableCondition: true,
+};
 
 

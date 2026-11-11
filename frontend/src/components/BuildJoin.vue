@@ -48,5 +48,6 @@ const props = defineProps<{
   tablesAvailableToJoinWith: string[];
 
 }>();
+
 const joins = ref<Join["joinType"][]>(["INNER", "LEFT", "RIGHT", "FULL"]);
 </script>

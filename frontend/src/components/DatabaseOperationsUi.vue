@@ -1,40 +1,30 @@
 <template>
+  
+  <block-unit-wrapper type="database" :hide-toggle-btn="blockIndex > 0"  :scope="scope">
+    <template #header-extend-left>
+<div class="">
+                    <q-icon name="bi-table" class="q-mr-sm"
+                     color="grey-6" />
 
- 
-
-  <q-expansion-item expand-icon="bi-chevron-up">
-    <template #header>
-      <div class="row col items-center justify-between">
-        <div class="">
-          {{ dbOperation.name || "step name" }}
+           {{ dbOperation.name || "step name" }}
         </div>
-        <div class="col">
-          <slot name="condition"></slot>
-        </div>
-        <q-space />
-
-        <div>
-          <q-card-section align="right" class="q-gutter-x-sm">
-            <q-btn
-              color="red-5"
-              size="sm"
-              dense
-              icon="science"
-              @click="testOperation"
-            />
-            <q-btn
-              color="red-8"
-              dense
-              size="sm"
-              icon="delete"
-              @click="deleteOperation"
-            />
-          </q-card-section>
-        </div>
-      </div>
     </template>
-
-    <div
+    <template #header-extend-right >
+  <q-btn dense flat icon="more_horiz" class="q-mr-sm">
+          <q-menu>
+            <q-list>
+              <q-item clickable v-close-popup @click="testOperation">
+                <q-item-section>Test Operation</q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable v-close-popup @click="deleteOperation">
+                <q-item-section>Delete Operation</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+    </template>
+       <div
       class="row items-center q-col-gutter-x-md bg-dark-page q-pa-sm rounded-borders"
       style="border: 1px solid rgba(255, 255, 255, 0.05)"
     >
@@ -140,7 +130,7 @@
               removable
               dense
               clickable
-              @click="removeTable(i,t.table)"
+              @click="removeTable(i, t.table)"
               :label="t.table"
             />
 
@@ -228,9 +218,7 @@
               removable
               clickable
               :icon-remove="biXCircleFill"
-              @remove="
-                removeColumn(i)
-              "
+              @remove="removeColumn(i)"
             >
               <q-menu context-menu @hide="appContext.saveApi()">
                 <column-attributes-selector
@@ -330,7 +318,7 @@
         </div>
       </div>
     </div>
-  </q-expansion-item>
+  </block-unit-wrapper>
 </template>
 
 <script lang="ts" setup>
@@ -352,10 +340,12 @@ import {
   Routes,
   useAppContextStore,
 } from "../store/appContext";
-import { Condition } from "..";
+import { BlockScope, Condition } from "..";
 import BuildJoin from "./BuildJoin.vue";
 import { testOperationBlock } from "~/client/api";
 import ColumnAttributesSelector from "./columnAttributesSelector.vue";
+import BlockUnitWrapper from "./BlockUnitWrapper.vue";
+import { useInject } from "~/composable/useProviderInjector";
 
 const appContext = useAppContextStore();
 type OperationType = "SELECT" | "UPDATE" | "DELETE" | "INSERT";
@@ -363,15 +353,26 @@ const pagination = ref(false);
 const startAt = ref("0");
 const endAt = ref("10");
 const batch = ref(10);
+const expanded = ref(false);
 const props = defineProps<{
   index: number;
   endPointData: Routes;
   dbOperation: DatabaseOperations;
+  blockIndex: number;
+  scope: BlockScope;
 }>();
-const filterTables = ref("");
 const testOperation = () => {
   testOperationBlock();
 };
+
+const getTopLevelIndex = () => {
+  return {
+    operationIndex: props.index,
+    blockIndex: props.blockIndex,
+  };
+};
+provide("indexPosition", getTopLevelIndex);
+
 const deleteOperation = () => {};
 const options = useOptions();
 const initColumn = reactive({
@@ -385,6 +386,7 @@ const useOperationInfo = () => ({
   routeData: props.endPointData,
   dbOperation: props.dbOperation,
 });
+const blockIndex2  = useInject('getCurrentBlockIndex')?.()
 provide("useOperationInfo", useOperationInfo);
 
 const operations = ref<DatabaseQuery>({
@@ -443,14 +445,16 @@ const addWhereCondition = (condition: Condition[]) => {
   props.dbOperation.query.where = condition;
   appContext.saveApi();
 };
-function removeTable(index: number,name:string) {
+function removeTable(index: number, name: string) {
   props.dbOperation.query.tables.splice(index, 1);
-  props.dbOperation.query.columns = props.dbOperation.query.columns.filter((v)=>v.column.toLowerCase() != name.toLocaleLowerCase())
+  props.dbOperation.query.columns = props.dbOperation.query.columns.filter(
+    (v) => v.column.toLowerCase() != name.toLocaleLowerCase(),
+  );
   appContext.saveApi();
 }
-function removeColumn(index:number){
-  props.dbOperation.query.columns.splice(index,1)
-  appContext.saveApi()
+function removeColumn(index: number) {
+  props.dbOperation.query.columns.splice(index, 1);
+  appContext.saveApi();
 }
 
 function columnsUpdated(v: string, b: boolean) {

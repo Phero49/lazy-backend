@@ -68,7 +68,7 @@ export  const statusCodes  = {
 	StatusSeeOther          : 303 , // RFC 9110, 15.4.4
 	StatusNotModified       : 304 , // RFC 9110, 15.4.5
 	StatusUseProxy          : 305 , // RFC 9110, 15.4.6
-	_                       : 306 , // RFC 9110, 15.4.7 (Unused)
+	//_                       : 306 , // RFC 9110, 15.4.7 (Unused)
 	StatusTemporaryRedirect : 307 , // RFC 9110, 15.4.8
 	StatusPermanentRedirect : 308 , // RFC 9110, 15.4.9
 
@@ -126,3 +126,15 @@ dataTypes = [
     'list (string)',
     'list (int)',
 ];
+
+export function blockHasHttpResponse():boolean {
+	return false
+}
+
+export function getPayloadData(){
+
+}
+
+function getPreviousBlockData(){
+	
+}

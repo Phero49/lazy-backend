@@ -137,10 +137,12 @@ export namespace io {
 	export class DependencySchema {
 	    version: number;
 	    "lang-extension": string;
+	    name?: string;
 	    description: string;
 	    publisher: string;
 	    install: string[];
 	    modules: Module[];
+	    location?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new DependencySchema(source);
@@ -150,10 +152,12 @@ export namespace io {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = source["version"];
 	        this["lang-extension"] = source["lang-extension"];
+	        this.name = source["name"];
 	        this.description = source["description"];
 	        this.publisher = source["publisher"];
 	        this.install = source["install"];
 	        this.modules = this.convertValues(source["modules"], Module);
+	        this.location = source["location"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

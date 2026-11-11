@@ -1,5 +1,5 @@
-import { EndPointData } from './../wailsjs/go/models';
-import { DatabaseOperations, Routes } from "./store/appContext";
+import { EndPointData, io } from './../wailsjs/go/models';
+import { ConditionGate, DatabaseOperations, OperationBlock, Routes } from "./store/appContext";
 
 /**
  * Comparison operators supported by the query builder.
@@ -113,3 +113,21 @@ type ApiResponse = {
   }
 
 }
+
+ type DependencyMethods = {
+  source:string,
+  data:io.Exports[]
+}
+
+type AvailableDataSources = "static" | "module" | "payload" | "operationBlock";
+
+type BlockScope = {
+        operation: OperationBlock | undefined;
+        condition: ConditionGate | null | undefined;
+        enableCondition: boolean;
+        operationIndex?:number
+        blockIndex:number
+        operations: OperationBlock[] | undefined;
+        addExpression: () => void;
+        hidToggle?:boolean
+    };

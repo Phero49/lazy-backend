@@ -1,2 +1,8 @@
 {
+    "go.toolsEnvVars": {
+        "GO111MODULE": "on",
+        "GOROOT": "/home/pemphero/.gvm/gos/go1.25.7",
+        "GOPATH": "/home/pemphero/.gvm/pkgsets/go1.25.7/global",
+        "PATH": "/home/pemphero/.gvm/gos/go1.23.10/bin:/home/pemphero/.gvm/pkgsets/go1.23.10/global/bin:${env:PATH}"
+    }
 }

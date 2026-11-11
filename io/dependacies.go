@@ -15,10 +15,12 @@ import (
 type DependencySchema struct {
 	Version       int64    `json:"version"`
 	LangExtension string   `json:"lang-extension"`
+	Name          *string  `json:"name"`
 	Description   string   `json:"description"`
 	Publisher     string   `json:"publisher"`
 	Install       []string `json:"install"`
 	Modules       []Module `json:"modules"`
+	Location      *string  `json:"location"`
 }
 
 type Module struct {
@@ -86,6 +88,7 @@ func LoadLocalDependencies(ctx context.Context) (Dependence, error) {
 
 // GetDependencyExports reads and validates a dependency manifest file
 func GetDependencyExports(path string) ([]Exports, error) {
+
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -129,8 +132,17 @@ func (e *DependencyError) Error() string {
 	return e.Message
 }
 
+// return the folder name where dependency json is in
+func getDeAppDependencyFolder() string {
+	return path.Join(APP_FOLDER, "installed-dependencies")
+}
+
+// return path of the dependency json
+func getAppInstalledDependencyList() string {
+	return path.Join(getDeAppDependencyFolder(), "dependency-list.json")
+}
 func InstallDependencyModule(dependency Dependence) error {
-	dPath := path.Join(APP_FOLDER, "installed-dependencies")
+	dPath := getDeAppDependencyFolder()
 	if _, err := os.Stat(dPath); os.IsNotExist(err) {
 		err := os.MkdirAll(dPath, 0755)
 		if err != nil {
@@ -276,7 +288,7 @@ func RemoveProjectDependency(projectPath string, name string) error {
 }
 
 func GetAllInstalledDependencies() ([]Dependence, error) {
-	dPath := path.Join(APP_FOLDER, "installed-dependencies")
+	dPath := getDeAppDependencyFolder()
 	dependencyListPath := path.Join(dPath, "dependency-list.json")
 
 	if _, err := os.Stat(dependencyListPath); err != nil {
@@ -309,8 +321,8 @@ func GetAllInstalledDependencies() ([]Dependence, error) {
 
 // GetProjectUsedDependencies reads the dependency list for the provided project path.
 // Fixed: the function now accepts the project directory explicitly instead of always reading from the global app folder.
-func GetProjectUsedDependencies(projectPath string) ([]Dependence, error) {
-	resolvedProjectPath, err := resolveProjectPath(projectPath)
+func GetProjectUsedDependencies(projectName string) ([]Dependence, error) {
+	resolvedProjectPath, err := resolveProjectPath(projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -345,16 +357,17 @@ func GetProjectUsedDependencies(projectPath string) ([]Dependence, error) {
 	return dependencies, nil
 }
 
-func GetDependencyManifest(name string) (*DependencySchema, error) {
-	dependencyListPath := path.Join(APP_FOLDER, "dependency-list.json")
-	if _, err := os.Stat(dependencyListPath); err != nil {
+func GetDependencyManifest(location string) (*DependencySchema, error) {
+	manifest := path.Join(location, "manifest.json")
+	if _, err := os.Stat(manifest); err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, fmt.Errorf("failed to find dependency on the specified path: %v", location)
 		}
 		return nil, fmt.Errorf("failed to stat installed dependency list: %w", err)
 	}
 
-	data, err := os.ReadFile(dependencyListPath)
+	data, err := os.ReadFile(manifest)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to read installed dependency list: %w", err)
 	}
@@ -362,10 +375,12 @@ func GetDependencyManifest(name string) (*DependencySchema, error) {
 		return nil, fmt.Errorf("failed to dependency the manifest is empty or corrupt")
 	}
 
-	var dependencyList *DependencySchema
+	var dependencyList DependencySchema
+
 	if err := json.Unmarshal(data, &dependencyList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal installed dependency list: %w", err)
 	}
+	dependencyList.Location = &location
 
-	return dependencyList, nil
+	return &dependencyList, nil
 }

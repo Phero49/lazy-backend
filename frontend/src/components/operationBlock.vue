@@ -1,11 +1,12 @@
-<template>
+<template>   
   <div
     :class="{ 'block-boundary q-py-sm': condition?.disableCondition === false }"
     class="q-pl-sm"
   >
-    <div
-      v-if="condition && enableCondition"
-      class="full-width row items-center"
+  <div class="row justify-between">
+  <div
+      v-if="condition?.disableCondition === false"
+      class=" row items-center q-mb-md"
     >
       <!-- if / else if / else. Only switchable when a previous block already has an `if` -->
       <span
@@ -82,25 +83,31 @@
         />
       </template>
     </div>
+    <div v-else></div>
 
-    <div class="row justify-end">
-      <q-toggle
-        size="sm"
-        @update:model-value="toggleCondition"
-        v-model="enableCondition"
-        left-label
-        label="condition"
-        color="green"
-      />
+    <div v-if="condition?.disableCondition === false" >
+  <span :id="'toggle-condition-block_'+index" ></span>
+ <q-btn icon="close" color="negative" outline  size="sm" unelevated round class="bg-white" dense @click="condition.disableCondition = true" >
+  <q-tooltip>Disable condition</q-tooltip>
+ </q-btn>
     </div>
+  </div>
   
-    <slot name="main"></slot> 
-    
-    <div class="q-mt-md bg-grey-10 q-pa-md">
-  <operation-http-response />
-    </div>
 
-    <operation-block-add-content  :blocks="props.route.data?.operations||[]" />
+    <slot name="main"  :scope="{
+      operation: operation,
+      condition: condition,
+      blockIndex:index,
+      operations: props.route.data?.operations,
+      enableCondition: enableCondition,
+      isBlock:isBlock,
+
+      
+      addExpression: addExpression,
+    }" ></slot> 
+    
+  
+
   </div>
 </template>
 
@@ -112,46 +119,37 @@ import { getStatuesCodeList, statusCodes } from "~/utils/apiSchema.js";
 import OperationHttpResponse from "./operationHttpResponse.vue";
 import { biPlus } from "@quasar/extras/bootstrap-icons/index.js";
 import OperationBlockAddContent from "./operationBlockAddContent.vue";
+import { p } from "vue-router/dist/router-CWoNjPRp.mjs";
+import { useProvide } from "~/composable/useProviderInjector.js";
 
 const props = defineProps<{
   index: number;
   route: Routes;
+  isBlock:boolean
   previousBlockHasIf: boolean;
 }>();
 
 const availableConditions = ["if", "else if", "else"] as const;
 const joinClauses = ["AND", "OR"] as const;
-const statusCode = ref(null);
-const returnStaticType = ref(true)
+
 const operation = computed(() => props.route.data?.operations[props.index]);
 const condition = computed(() => operation.value?.condition);
+  
+
+provide("getOperationInfo", () => {
+  return  {
+
+  }
+});
 
 // Recomputed so operations added or removed above are picked up
 
 // `disableCondition` is the inverse of "enabled", and nothing is enabled
 // until a condition exists
 const enableCondition = ref(
-  !!condition.value && !condition.value.disableCondition,
+  !condition.value?.disableCondition,
 );
 
-const toggleCondition = (enabled: boolean) => {
-  const op = operation.value;
-  if (!op) return;
-
-  if (enabled) {
-    if (!op.condition) {
-      op.condition = { data: [], type: "if", disableCondition: false };
-    } else {
-      op.condition.disableCondition = false; // re-enable an existing condition
-    }
-    // start with one empty expression so there is something to fill in
-    if (op.condition.type !== "else" && op.condition.data.length === 0) {
-      addExpression();
-    }
-  } else if (op.condition) {
-    op.condition.disableCondition = true; // keep the data, just switch it off
-  }
-};
 
 const setType = (type: (typeof availableConditions)[number]) => {
   if (!condition.value) return;
@@ -167,7 +165,7 @@ const setType = (type: (typeof availableConditions)[number]) => {
 // The first block of a chain can only be `if`
 watch(
   () => props.previousBlockHasIf,
-  (hasIf) => {
+  (hasIf) => {  
     if (!hasIf && condition.value && condition.value.type !== "if") {
       setType("if");
     }
@@ -204,8 +202,12 @@ const removeExpression = (i: number) => {
   }
 };
 
-provide("getCurrentRoute", () => {
+useProvide("getCurrentRoute", () => {
   return props.route;
+});
+
+useProvide("getCurrentBlockIndex", () => {
+  return props.index;
 });
 
 </script>

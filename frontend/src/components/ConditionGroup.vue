@@ -13,7 +13,7 @@
       <ConditionGroup
         v-if="child.type === 'group'"
         :level="level + 1"
-        v-model="model.children[i]"
+        v-model="(model.children[i] as any)"
         :field-options="fieldOptions"
         @remove="model.children.splice(i, 1)"
       />
@@ -35,7 +35,7 @@ import ConditionRow, { type ConditionRowModel } from "./ConditionRow.vue";
 
 export interface ConditionGroupModel {
   type: "group";
-  logic: "AND" | "OR";
+  logic?: "AND" | "OR";
   children: (ConditionRowModel | ConditionGroupModel)[];
 }
 

@@ -1,10 +1,8 @@
 <template>
   <div v-if="$route.params['endPoint'] && endPointData">
-   
     <div>
       <q-expansion-item
         expand-separator
-        expand-icon="bi-chevron-down"
         label="Payload"
         header-class="items-center text-subtitle1"
       >
@@ -15,69 +13,45 @@
         </EndpointPayload>
       </q-expansion-item>
     </div>
-    <div></div>
 
     <div
       class="q-ma-md"
       v-for="(value, i) in endPointData.data?.operations || []"
     >
-      <OperationBlock 
-      :previous-block-has-if="endPointData.data?.operations[i - 1]?.condition != null"
-      :route="endPointData" 
-      
-      :index="i">
-        <template #main>
-          <DatabaseOperationsUi
-            v-if="value.databaseBlock"
-            :index="i"
-            :end-point-data="endPointData"
-            :db-operation="value.databaseBlock"
-            @update-payload="endPoint.updateLimitPayload"
-          >
-           
-          </DatabaseOperationsUi>
+      <div class="row justify-end"></div>
+      <OperationBlock
+        :previous-block-has-if="
+          endPointData.data?.operations[i - 1]?.condition != null
+        "
+        :isBlock="value.data.length > 0"
+        :route="endPointData"
+        :index="i"
+      >
+        <template #main="scope">
+          <div  v-for="(item, index) in value.data" :key="index">
+            <EndPointContentWrapper
+              :scope="scope"
+              :item="item"
+              :operation-index="index"
+              :block-index="i"
+              :end-point-data="endPointData"
+            />
+
+            <q-separator spaced />
+          </div>
+          <operation-block-add-content
+            :top-level="false"
+            v-if="value.condition?.disableCondition === false"
+            :blocks="[]"
+            :block-data="value.data"
+          />
         </template>
       </OperationBlock>
     </div>
-    <div class="text-center">
-      <q-btn
-        color="grey"
-        dense
-        :icon="symRoundedStepInto"
-        @click="
-          endPointData.data?.operations.push({
-            databaseBlock: {
-              databaseAction: 'SELECT',
-              name: '',
-              query: {
-                tables: [],
-                columns: [],
-                where: [],
-              },
-            },
-            type: 'database',
-            children: [],
-            condition: null,
-          });
-          appContext.saveApi();
-        "
-      >
-      </q-btn>
-      <q-btn color="grey" dense :icon="symRoundedArrowSplit" @click="">
-        <q-menu anchor="center middle">
-          <q-list style="min-width: 100px">
-            <div class="q-pa-md">add branching condition</div>
-            <q-item clickable v-close-popup>
-              <q-item-section>New tab</q-item-section>
-            </q-item>
-            <q-separator />
-            <q-item clickable v-close-popup>
-              <q-item-section>New incognito tab</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-btn>
-    </div>
+    <OperationBlockAddContent
+      :block-data="[]"
+      :blocks="endPointData.data?.operations || []"
+    />
   </div>
   <div v-else>
     <div class="text-center text-subtitle1 q-pa-md">
@@ -91,6 +65,7 @@ import { computed, provide, ref, toRaw, watch } from "vue";
 import {
   httpMethod,
   type HTTPMethods,
+  type OperationBlock as OperationBlockType,
   Payload,
   Routes,
   useAppContextStore,
@@ -107,12 +82,31 @@ import { date } from "quasar";
 import EndpointPayload from "../components/EndpointPayload.vue";
 import { useEndPointContext } from "../composable/EndpointBulder";
 import OperationBlock from "~/components/operationBlock.vue";
-
-const route = useRoute();
-const level = computed(() =>
-  (route.query.level as string).split(",").map((v) => +v),
-);
+import OperationBlockAddContent from "~/components/operationBlockAddContent.vue";
+import OperationHttpResponse from "~/components/operationHttpResponse.vue";
+import OperationDependencyUi from "~/components/operationDependencyUi.vue";
+import { useProvide } from "~/composable/useProviderInjector";
+import EndPointContentWrapper from "~/components/EndPointContentWrapper.vue";
 const appContext = useAppContextStore();
+const route = useRoute();
+const level = computed(
+  () => (appContext.tabState[route.path].levels as number[]) ?? [],
+);
+
+const vSetMissingCondition = {
+  mounted(el: HTMLElement, binding: any) {
+    if (binding.value === undefined) {
+      return;
+    }
+    const v = binding.value as OperationBlockType;
+    if (v.condition === undefined || v.condition === null) {
+      v.condition = { data: [], type: "if", disableCondition: true };
+    } else if (v.condition.disableCondition === undefined) {
+      v.condition.disableCondition = true;
+    }
+  },
+};
+
 const endPointData = computed(() => {
   if (level.value.length == 0) {
     return;
@@ -137,7 +131,8 @@ const activeCondition = ref<string | null>(null);
 
 //TODO: remove the prop architecture
 const endPoint = useEndPointContext(endPointData.value);
-provide("endPointContext", endPoint);
+
+useProvide("endPointContext", endPoint);
 
 const testOperation = () => {
   null;
@@ -145,6 +140,5 @@ const testOperation = () => {
 const deleteOperation = () => {
   null;
 };
-</script>
 
-<style></style>
+</script>
